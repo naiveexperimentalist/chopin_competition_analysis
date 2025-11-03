@@ -48,9 +48,9 @@ from chopin_final_score_stability import FinalScoreStabilityAnalyzer, FinalScore
 def main():
     parser = argparse.ArgumentParser(description="Run full Chopin competition analysis")
     parser.add_argument('--stage1', default='chopin_2025_stage1_by_judge.csv', help='CSV file with stage 1 scores by judge')
-    parser.add_argument('--stage2', default='chopin_2025_stage2_by_judge.csv', required=True, help='CSV file with stage 2 scores by judge')
-    parser.add_argument('--stage3', default='chopin_2025_stage3_by_judge.csv', required=True, help='CSV file with stage 3 scores by judge')
-    parser.add_argument('--final', default='chopin_2025_final_by_judge.csv', required=True, help='CSV file with final scores by judge')
+    parser.add_argument('--stage2', default='chopin_2025_stage2_by_judge.csv', help='CSV file with stage 2 scores by judge')
+    parser.add_argument('--stage3', default='chopin_2025_stage3_by_judge.csv', help='CSV file with stage 3 scores by judge')
+    parser.add_argument('--final', default='chopin_2025_final_by_judge.csv', help='CSV file with final scores by judge')
     parser.add_argument('--output', default='full_analysis_results', help='Base output directory')
     args = parser.parse_args()
 
