@@ -289,7 +289,7 @@ def visualize_normalization_comparison(normalization_results: dict, save_path: s
     print(f"✓ Zapisano wizualizację porównania normalizacji do: {save_path}")
     plt.close()
 
-def analyze_normalization_impact():
+def analyze_normalization_impact(save_path):
     """
     Analizuje wpływ normalizacji na wyniki konkursu
     """
@@ -384,7 +384,7 @@ def analyze_normalization_impact():
             # print(f'WYNIKI PO NORMALIZACJI TYPU {norm_method}')
             # print(normalization_results[norm_method])
             # print()
-    visualize_normalization_comparison(normalization_results, 'visualizations/normalization_comparison.png')
+    visualize_normalization_comparison(normalization_results, save_path)
     # Porównaj wyniki
     print("\n=== PORÓWNANIE WYNIKÓW PO NORMALIZACJI ===\n")
     
