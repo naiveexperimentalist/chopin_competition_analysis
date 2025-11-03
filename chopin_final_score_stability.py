@@ -557,25 +557,25 @@ class FinalScoreStabilityVisualizer:
         print("1/4 Rozkłady wyników (violin plots)...")
         self.visualize_score_distributions(
             bootstrap_results,
-            save_path=f'{output_dir}/24_score_distributions.png'
+            save_path=f'{output_dir}/34_score_distributions.png'
         )
         
         print("\n2/4 Przedziały ufności...")
         self.visualize_confidence_intervals(
             bootstrap_results, confidence=0.95,
-            save_path=f'{output_dir}/25_confidence_intervals.png'
+            save_path=f'{output_dir}/35_confidence_intervals.png'
         )
         
         print("\n3/4 Macierz stabilności rankingu...")
         self.visualize_ranking_stability_matrix(
             bootstrap_results,
-            save_path=f'{output_dir}/26_ranking_stability_matrix.png'
+            save_path=f'{output_dir}/36_ranking_stability_matrix.png'
         )
         
         print("\n4/4 Wynik vs niepewność...")
         self.visualize_score_vs_uncertainty(
             bootstrap_results,
-            save_path=f'{output_dir}/27_score_vs_uncertainty.png'
+            save_path=f'{output_dir}/37_score_vs_uncertainty.png'
         )
         
         print(f"\n{'='*60}")
