@@ -1,0 +1,162 @@
+judge,participant_nr,participant_name,avg_difference,consistency,n_stages,type
+Garrick Ohlsson,24,Piotr Alexewicz,-2.2199999999999998,0.45299006611624515,4,unfavorite
+Garrick Ohlsson,29,Kevin Chen,-2.205,0.35507041555161994,4,unfavorite
+Garrick Ohlsson,39,Yang (Jack) Gao,2.3333333333333335,0.4714045207910317,3,favorite
+Garrick Ohlsson,41,Eric Guo,-2.3333333333333335,0.4714045207910317,3,unfavorite
+Garrick Ohlsson,47,David Khrikuli,-2.0725,0.12557368354874324,4,unfavorite
+Garrick Ohlsson,53,Hyo Lee,1.106666666666668,0.7168604389202189,3,favorite
+Garrick Ohlsson,54,Hyuk Lee,-1.6866666666666663,0.4431202495435704,3,unfavorite
+Garrick Ohlsson,64,Tianyao Lyu,-1.9399999999999995,0.0600000000000005,4,unfavorite
+Garrick Ohlsson,73,Vincent Ong,-1.6325000000000003,0.6365286717815619,4,unfavorite
+Garrick Ohlsson,75,Piotr Pawlak,2.3333333333333335,0.4714045207910317,3,favorite
+Garrick Ohlsson,76,Yehuda Prokopowicz,2.3333333333333335,0.4714045207910317,3,favorite
+Garrick Ohlsson,81,Miyu Shindo,-1.6025,0.5891678453547853,4,unfavorite
+John Alison,3,Tomoharu Ushida,-1.8733333333333337,0.9757504234633403,3,unfavorite
+John Alison,5,Zitong Wang,1.0025000000000004,0.7473411202389442,4,favorite
+John Alison,11,Yifan Wu,-1.2333333333333332,0.25460208605237783,3,unfavorite
+John Alison,15,William Yang,-1.1099999999999994,1.0971098395329428,4,unfavorite
+John Alison,24,Piotr Alexewicz,1.0175,0.6470848089702003,4,favorite
+John Alison,39,Yang (Jack) Gao,-2.0,0.816496580927726,3,unfavorite
+John Alison,41,Eric Guo,-1.236666666666667,0.4733802793620465,3,unfavorite
+John Alison,47,David Khrikuli,1.6775000000000002,0.5585863854409625,4,favorite
+John Alison,51,Shiori Kuwahara,-1.045,1.2223236069061256,4,unfavorite
+John Alison,58,Xiaoxuan Li,-1.5233333333333334,0.47218169760755885,3,unfavorite
+John Alison,64,Tianyao Lyu,-1.6075,1.0017827858373294,4,unfavorite
+John Alison,73,Vincent Ong,-2.25,0.4330127018922193,4,unfavorite
+John Alison,75,Piotr Pawlak,2.3333333333333335,0.4714045207910317,3,favorite
+John Alison,76,Yehuda Prokopowicz,1.0566666666666673,1.1684842983778414,3,favorite
+John Alison,81,Miyu Shindo,-1.0899999999999999,1.2291663841807585,4,unfavorite
+Yulianna Avdeeva,15,William Yang,-1.7649999999999997,0.5607361233236188,4,unfavorite
+Yulianna Avdeeva,41,Eric Guo,1.4299999999999997,0.12328828005937978,3,favorite
+Yulianna Avdeeva,47,David Khrikuli,1.0300000000000002,1.8089085106770881,4,favorite
+Yulianna Avdeeva,62,Eric Lu,-1.1350000000000007,1.4241576457681917,4,unfavorite
+Yulianna Avdeeva,75,Piotr Pawlak,1.6466666666666672,1.0221654573610972,3,favorite
+Yulianna Avdeeva,76,Yehuda Prokopowicz,2.1366666666666667,0.19327585352432305,3,favorite
+Yulianna Avdeeva,81,Miyu Shindo,-1.1475,0.5082014856334048,4,unfavorite
+Michel Beroff,11,Yifan Wu,2.176666666666667,0.24984439601924732,3,favorite
+Michel Beroff,29,Kevin Chen,1.9700000000000006,0.14999999999999927,4,favorite
+Michel Beroff,41,Eric Guo,1.8033333333333335,0.27812866726670865,3,favorite
+Michel Beroff,47,David Khrikuli,1.7650000000000006,0.866847737494884,4,favorite
+Michel Beroff,51,Shiori Kuwahara,2.0725,0.12557368354874324,4,favorite
+Michel Beroff,54,Hyuk Lee,2.3333333333333335,0.4714045207910317,3,favorite
+Michel Beroff,62,Eric Lu,1.3149999999999995,0.9783787610123181,4,favorite
+Michel Beroff,75,Piotr Pawlak,1.1166666666666671,0.5020845435670065,3,favorite
+Michel Beroff,81,Miyu Shindo,2.0300000000000002,0.08999999999999955,4,favorite
+Sa Chen,29,Kevin Chen,1.2200000000000006,0.7968688725254611,4,favorite
+Sa Chen,39,Yang (Jack) Gao,1.2166666666666661,0.5720334100576843,3,favorite
+Sa Chen,47,David Khrikuli,1.3675000000000006,1.2524451085776171,4,favorite
+Sa Chen,51,Shiori Kuwahara,1.0274999999999999,1.2047276663213138,4,favorite
+Sa Chen,57,Tianyou Li,2.25,0.4330127018922193,4,favorite
+Sa Chen,73,Vincent Ong,1.7199999999999998,0.7215608082483408,4,favorite
+Sa Chen,75,Piotr Pawlak,-1.0599999999999998,1.0528374360112138,3,unfavorite
+Sa Chen,76,Yehuda Prokopowicz,1.0366666666666677,1.5028935055049266,3,favorite
+Dang Thai Son,3,Tomoharu Ushida,-1.1233333333333337,0.9834067769183255,3,unfavorite
+Dang Thai Son,11,Yifan Wu,-1.823333333333333,0.24984439601924732,3,unfavorite
+Dang Thai Son,29,Kevin Chen,-1.4274999999999993,1.4538805831291652,4,unfavorite
+Dang Thai Son,39,Yang (Jack) Gao,-1.1166666666666671,1.2492219800962334,3,unfavorite
+Dang Thai Son,41,Eric Guo,-1.4333333333333336,0.6079656423040881,3,unfavorite
+Dang Thai Son,47,David Khrikuli,1.3525,1.3258087154638862,4,favorite
+Dang Thai Son,51,Shiori Kuwahara,-1.3825000000000003,0.9684104243552933,4,unfavorite
+Dang Thai Son,54,Hyuk Lee,-1.3333333333333333,1.218669584241584,3,unfavorite
+Dang Thai Son,57,Tianyou Li,-1.7350000000000003,0.9498815715656352,4,unfavorite
+Dang Thai Son,58,Xiaoxuan Li,-1.1900000000000002,1.0617909398746999,3,unfavorite
+Dang Thai Son,73,Vincent Ong,2.0,0.33234018715767655,4,favorite
+Dang Thai Son,75,Piotr Pawlak,-1.6866666666666663,1.0351274747048742,3,unfavorite
+Dang Thai Son,76,Yehuda Prokopowicz,-2.2166666666666663,0.5720334100576843,3,unfavorite
+Akiko Ebi,11,Yifan Wu,1.5500000000000007,0.3595367389665017,3,favorite
+Akiko Ebi,24,Piotr Alexewicz,2.25,0.4330127018922193,4,favorite
+Akiko Ebi,53,Hyo Lee,2.313333333333334,0.4431202495435704,3,favorite
+Akiko Ebi,54,Hyuk Lee,1.3533333333333342,0.46312945154555696,3,favorite
+Akiko Ebi,58,Xiaoxuan Li,1.0599999999999998,0.9205433178292036,3,favorite
+Akiko Ebi,73,Vincent Ong,1.455,0.3360431519909303,4,favorite
+Akiko Ebi,75,Piotr Pawlak,2.1366666666666667,0.6562689150713211,3,favorite
+Akiko Ebi,76,Yehuda Prokopowicz,-1.0799999999999994,1.0632340601516987,3,unfavorite
+Nelson Goerner,11,Yifan Wu,1.4333333333333336,0.9957353508281649,3,favorite
+Nelson Goerner,15,William Yang,-1.0625,1.6237976320958225,4,unfavorite
+Nelson Goerner,24,Piotr Alexewicz,1.9275000000000002,0.8128768356891464,4,favorite
+Nelson Goerner,39,Yang (Jack) Gao,1.2166666666666661,1.5897239452880556,3,favorite
+Nelson Goerner,41,Eric Guo,1.763333333333333,0.4733802793620465,3,favorite
+Nelson Goerner,47,David Khrikuli,1.1775000000000002,1.424611789225401,4,favorite
+Nelson Goerner,51,Shiori Kuwahara,1.7649999999999997,0.8224810028201263,4,favorite
+Nelson Goerner,62,Eric Lu,1.2824999999999998,1.130229512090355,4,favorite
+Nelson Goerner,73,Vincent Ong,2.1174999999999997,0.2035159698893426,4,favorite
+Nelson Goerner,81,Miyu Shindo,-1.1174999999999997,0.9498519621498922,4,unfavorite
+Krzysztof Jabłoński,5,Zitong Wang,-2.1875,0.480071609241788,4,unfavorite
+Krzysztof Jabłoński,11,Yifan Wu,-1.4499999999999993,1.1266173559228825,3,unfavorite
+Krzysztof Jabłoński,24,Piotr Alexewicz,-2.16,0.42708313008125165,4,unfavorite
+Krzysztof Jabłoński,29,Kevin Chen,1.7350000000000003,0.3350746185553303,4,favorite
+Krzysztof Jabłoński,39,Yang (Jack) Gao,-2.3333333333333335,0.4714045207910317,3,unfavorite
+Krzysztof Jabłoński,41,Eric Guo,-1.706666666666667,1.0573656993785179,3,unfavorite
+Krzysztof Jabłoński,47,David Khrikuli,-1.0599999999999996,1.4829194179051002,4,unfavorite
+Krzysztof Jabłoński,51,Shiori Kuwahara,-1.5149999999999997,1.1607217582177047,4,unfavorite
+Krzysztof Jabłoński,53,Hyo Lee,-1.2899999999999991,0.5123150072627849,3,unfavorite
+Krzysztof Jabłoński,58,Xiaoxuan Li,-1.6266666666666663,1.30080317069451,3,unfavorite
+Krzysztof Jabłoński,62,Eric Lu,-2.1325000000000003,0.5363476018404479,4,unfavorite
+Krzysztof Jabłoński,75,Piotr Pawlak,-2.1566666666666663,0.6343675765849187,3,unfavorite
+Krzysztof Jabłoński,76,Yehuda Prokopowicz,-1.8833333333333329,0.9629237883769532,3,unfavorite
+Kevin Kenner,5,Zitong Wang,1.1100000000000003,1.6530426491775705,4,favorite
+Kevin Kenner,15,William Yang,1.4375,0.9742785792574935,4,favorite
+Kevin Kenner,51,Shiori Kuwahara,-1.6775000000000002,0.5585863854409625,4,unfavorite
+Kevin Kenner,58,Xiaoxuan Li,2.103333333333333,0.14613540144521922,3,favorite
+Kevin Kenner,64,Tianyao Lyu,1.2325000000000008,0.7156596607326696,4,favorite
+Kevin Kenner,75,Piotr Pawlak,-1.53,1.4312465429361452,3,unfavorite
+Kevin Kenner,81,Miyu Shindo,1.455,0.7280281587960734,4,favorite
+Momo Kodama,11,Yifan Wu,2.176666666666667,0.24984439601924732,3,favorite
+Momo Kodama,24,Piotr Alexewicz,1.9575000000000005,0.680307834733659,4,favorite
+Momo Kodama,41,Eric Guo,2.1366666666666667,0.19327585352432305,3,favorite
+Momo Kodama,47,David Khrikuli,1.8675000000000006,0.5487428815028036,4,favorite
+Momo Kodama,51,Shiori Kuwahara,1.7325,0.2692002043089866,4,favorite
+Momo Kodama,62,Eric Lu,1.4324999999999992,0.5697532360592603,4,favorite
+Momo Kodama,73,Vincent Ong,2.1174999999999997,0.2035159698893426,4,favorite
+Robert McDonald,3,Tomoharu Ushida,1.9366666666666663,0.8951846488605335,3,favorite
+Robert McDonald,39,Yang (Jack) Gao,1.8833333333333329,0.6786424357167439,3,favorite
+Robert McDonald,47,David Khrikuli,-1.1324999999999994,0.5710680782533728,4,unfavorite
+Piotr Paleczny,5,Zitong Wang,-1.3899999999999997,0.950026315424999,4,unfavorite
+Piotr Paleczny,39,Yang (Jack) Gao,-2.116666666666667,0.16499158227686175,3,unfavorite
+Piotr Paleczny,53,Hyo Lee,1.7100000000000009,0.36851051545376523,3,favorite
+Piotr Paleczny,57,Tianyou Li,-1.4700000000000006,0.4272001872658765,4,unfavorite
+Piotr Paleczny,58,Xiaoxuan Li,1.7266666666666666,0.48609555530665777,3,favorite
+Piotr Paleczny,64,Tianyao Lyu,1.9525000000000006,0.1592757043619645,4,favorite
+Piotr Paleczny,73,Vincent Ong,-1.6475,0.9510881925457809,4,unfavorite
+Piotr Paleczny,75,Piotr Pawlak,1.4500000000000004,0.8184538268385497,3,favorite
+Piotr Paleczny,76,Yehuda Prokopowicz,1.7233333333333338,0.7014429572119327,3,favorite
+Piotr Paleczny,81,Miyu Shindo,1.1325000000000003,1.045690561303869,4,favorite
+Ewa Pobłocka,5,Zitong Wang,1.705,0.3984030622372279,4,favorite
+Ewa Pobłocka,11,Yifan Wu,-1.1566666666666663,1.1926534376013107,3,unfavorite
+Ewa Pobłocka,29,Kevin Chen,-1.6174999999999997,0.4820982783624101,4,unfavorite
+Ewa Pobłocka,47,David Khrikuli,-2.25,0.4330127018922193,4,unfavorite
+Ewa Pobłocka,51,Shiori Kuwahara,1.3075,0.8683137393822576,4,favorite
+Ewa Pobłocka,58,Xiaoxuan Li,2.3333333333333335,0.4714045207910317,3,favorite
+Ewa Pobłocka,64,Tianyao Lyu,1.9525000000000006,0.1592757043619645,4,favorite
+Ewa Pobłocka,75,Piotr Pawlak,-1.8633333333333333,0.19327585352432305,3,unfavorite
+K. Popowa-Zydroń,3,Tomoharu Ushida,1.0199999999999996,1.5660353337861403,3,favorite
+K. Popowa-Zydroń,11,Yifan Wu,-1.116666666666666,0.6466494843078097,3,unfavorite
+K. Popowa-Zydroń,15,William Yang,1.4375,0.9742785792574935,4,favorite
+K. Popowa-Zydroń,24,Piotr Alexewicz,-1.2024999999999997,0.7947444557843739,4,unfavorite
+K. Popowa-Zydroń,29,Kevin Chen,-1.3824999999999994,0.5507438152172031,4,unfavorite
+K. Popowa-Zydroń,39,Yang (Jack) Gao,1.3333333333333333,1.699673171197595,3,favorite
+K. Popowa-Zydroń,41,Eric Guo,-1.1000000000000003,1.074274949287503,3,unfavorite
+K. Popowa-Zydroń,47,David Khrikuli,-1.4699999999999998,0.7015340333868346,4,unfavorite
+K. Popowa-Zydroń,51,Shiori Kuwahara,1.4825,0.4315307057440995,4,favorite
+K. Popowa-Zydroń,53,Hyo Lee,-1.5599999999999987,0.5400617248673217,3,unfavorite
+K. Popowa-Zydroń,58,Xiaoxuan Li,-1.2733333333333334,0.3310924677823747,3,unfavorite
+K. Popowa-Zydroń,62,Eric Lu,-1.1500000000000004,1.0940521011359559,4,unfavorite
+K. Popowa-Zydroń,75,Piotr Pawlak,-1.3933333333333333,0.5921899094791204,3,unfavorite
+John Rink,3,Tomoharu Ushida,-1.456666666666667,0.6003517487458679,3,unfavorite
+John Rink,15,William Yang,1.8425000000000002,0.7693625608255183,4,favorite
+John Rink,24,Piotr Alexewicz,1.0175,1.1656409181218716,4,favorite
+John Rink,39,Yang (Jack) Gao,1.8833333333333329,0.16499158227686175,3,favorite
+John Rink,41,Eric Guo,2.0,0.33476359818036777,3,favorite
+John Rink,47,David Khrikuli,2.0150000000000006,0.48106652346634954,4,favorite
+John Rink,57,Tianyou Li,1.0874999999999995,0.6448788645939643,4,favorite
+John Rink,62,Eric Lu,1.2824999999999998,0.7364908349735254,4,favorite
+John Rink,64,Tianyao Lyu,-1.7674999999999992,0.7564183696870405,4,unfavorite
+John Rink,75,Piotr Pawlak,1.176666666666667,1.9154865932417502,3,favorite
+Wojciech Świtała,3,Tomoharu Ushida,-1.7900000000000003,0.8821564487096375,3,unfavorite
+Wojciech Świtała,11,Yifan Wu,1.1000000000000003,0.6946941773183357,3,favorite
+Wojciech Świtała,29,Kevin Chen,1.557500000000001,0.46175615859455466,4,favorite
+Wojciech Świtała,39,Yang (Jack) Gao,-1.3333333333333333,1.699673171197595,3,unfavorite
+Wojciech Świtała,64,Tianyao Lyu,1.2025000000000006,0.29802474729458356,4,favorite
+Wojciech Świtała,73,Vincent Ong,-1.2800000000000002,0.5344623466625122,4,unfavorite
+Wojciech Świtała,76,Yehuda Prokopowicz,-1.159999999999999,0.38790033084114145,3,unfavorite
+Wojciech Świtała,81,Miyu Shindo,1.1325000000000003,0.7506455555053925,4,favorite

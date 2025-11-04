@@ -1,0 +1,21 @@
+Nr,imię,nazwisko,participant_name,original_rank,mean_rank_mc,std_rank_mc,min_rank_mc,max_rank_mc,rank_range_mc,rank_95_lower,rank_95_upper
+62,Eric,Lu,Eric Lu,1,1.0,0.0,1,1,0,1,1
+5,Zitong,Wang,Zitong Wang,2,2.0,0.0,2,2,0,2,2
+29,Kevin,Chen,Kevin Chen,3,3.0,0.0,3,3,0,3,3
+57,Tianyou,Li,Tianyou Li,4,4.0,0.0,4,4,0,4,4
+64,Tianyao,Lyu,Tianyao Lyu,5,5.09,0.2861817604250837,5,6,1,5,6
+51,Shiori,Kuwahara,Shiori Kuwahara,6,5.91,0.2861817604250837,5,6,1,5,6
+81,Miyu,Shindo,Miyu Shindo,7,7.0,0.0,7,7,0,7,7
+53,Hyo,Lee,Hyo Lee,8,8.522,0.6822873295027544,8,11,3,8,10
+47,David,Khrikuli,David Khrikuli,9,8.942,0.822578871598341,8,11,3,8,11
+24,Piotr,Alexewicz,Piotr Alexewicz,10,9.805,0.820350534832519,8,11,3,8,11
+15,William,Yang,William Yang,11,10.738,0.5651159173125457,8,12,4,9,11
+3,Tomoharu,Ushida,Tomoharu Ushida,12,12.255,0.44269063690121113,11,13,2,12,13
+73,Vincent,Ong,Vincent Ong,13,12.738,0.44872708855160504,11,13,2,12,13
+54,Hyuk,Lee,Hyuk Lee,14,14.0,0.0,14,14,0,14,14
+39,Yang (Jack),Gao,Yang (Jack) Gao,15,15.293,0.48698151915652815,15,17,2,15,16
+58,Xiaoxuan,Li,Xiaoxuan Li,16,15.81,0.5548873759602033,15,17,2,15,17
+11,Yifan,Wu,Yifan Wu,17,16.897,0.338217385715164,15,17,2,16,17
+41,Eric,Guo,Eric Guo,18,18.127,0.33297297187609687,18,19,1,18,19
+76,Yehuda,Prokopowicz,Yehuda Prokopowicz,19,18.873,0.33297297187609687,18,19,1,18,19
+75,Piotr,Pawlak,Piotr Pawlak,20,20.0,0.0,20,20,0,20,20

@@ -1,0 +1,6 @@
+cluster,n_participants,avg_score,favorable_judges,unfavorable_judges,score_variability,top_member
+0,5,16.666666666666668,,"Ohlsson (-9.0), Alison (-6.7), Goerner (-5.3)",2.0497118919687387,1: Ziye Tao
+1,14,19.42401960784314,"McDonald (+1.7), Ohlsson (+1.6), Popowa-Zydroń (+1.5)","Alison (-2.5), Paleczny (-1.4)",1.7844323268302094,12: Miki Yamagata
+2,20,19.499752018454437,"Ohlsson (+1.5), Avdeeva (+1.1), Alison (+1.1)",,1.9193546630605198,7: Andrzej Wierciński
+3,23,20.660714285714285,"Goerner (+2.7), Rink (+2.2), Świtała (+2.0)",,1.6320552773397146,3: Tomoharu Ushida
+4,22,18.09954751131222,,"Beroff (-3.1), Goerner (-2.1), McDonald (-2.0)",1.9146793737439873,4: Ryan Wang

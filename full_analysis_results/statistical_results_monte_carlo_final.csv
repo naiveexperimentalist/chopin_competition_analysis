@@ -1,0 +1,12 @@
+Nr,imię,nazwisko,participant_name,original_rank,mean_rank_mc,std_rank_mc,min_rank_mc,max_rank_mc,rank_range_mc,rank_95_lower,rank_95_upper
+29,Kevin,Chen,Kevin Chen,1,1.0,0.0,1,1,0,1,1
+62,Eric,Lu,Eric Lu,2,2.014,0.12571396103854177,2,4,2,2,2
+24,Piotr,Alexewicz,Piotr Alexewicz,3,3.196,0.4237735244207689,2,4,2,3,4
+64,Tianyao,Lyu,Tianyao Lyu,4,3.79,0.412189276910499,2,4,2,3,4
+51,Shiori,Kuwahara,Shiori Kuwahara,5,5.437,0.49601512073726145,5,6,1,5,6
+73,Vincent,Ong,Vincent Ong,6,5.563,0.49601512073726145,5,6,1,5,6
+47,David,Khrikuli,David Khrikuli,7,7.059,0.235624701591323,7,8,1,7,8
+5,Zitong,Wang,Zitong Wang,8,7.941,0.235624701591323,7,8,1,7,8
+15,William,Yang,William Yang,9,9.0,0.0,9,9,0,9,9
+81,Miyu,Shindo,Miyu Shindo,10,10.0,0.0,10,10,0,10,10
+57,Tianyou,Li,Tianyou Li,11,11.0,0.0,11,11,0,11,11
