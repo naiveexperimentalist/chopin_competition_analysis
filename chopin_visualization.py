@@ -57,7 +57,7 @@ class ChopinVisualization:
         ax1 = axes[0]
         sns.violinplot(data=scores_df, x='Judge', y='Score', ax=ax1, inner='box')
         ax1.set_title(f'Rozkład ocen sędziów - {stage}', fontsize=16, fontweight='bold')
-        ax1.set_xlabel('Sędzia', fontsize=12)
+        ax1.set_xlabel('', fontsize=12)
         ax1.set_ylabel('Ocena', fontsize=12)
         ax1.tick_params(axis='x', rotation=45)
         ax1.grid(True, alpha=0.3)
@@ -65,10 +65,10 @@ class ChopinVisualization:
         # Box plot z punktami
         ax2 = axes[1]
         sns.boxplot(data=scores_df, x='Judge', y='Score', ax=ax2)
-        sns.stripplot(data=scores_df, x='Judge', y='Score', ax=ax2, 
+        sns.stripplot(data=scores_df, x='Judge', y='Score', ax=ax2,
                      alpha=0.4, size=3, color='red')
         ax2.set_title(f'Box plot z punktami - {stage}', fontsize=16, fontweight='bold')
-        ax2.set_xlabel('Sędzia', fontsize=12)
+        ax2.set_xlabel('', fontsize=12)
         ax2.set_ylabel('Ocena', fontsize=12)
         ax2.tick_params(axis='x', rotation=45)
         ax2.grid(True, alpha=0.3)
@@ -144,7 +144,7 @@ class ChopinVisualization:
             sns.heatmap(entropy_data.T, annot=True, fmt='.2f', cmap='YlOrRd', ax=ax4, 
                        cbar_kws={'label': 'Entropia'})
             ax4.set_title('Entropia ocen (różnorodność) przez etapy', fontsize=14, fontweight='bold')
-            ax4.set_xlabel('Sędzia', fontsize=12)
+            ax4.set_xlabel('', fontsize=12)
             ax4.set_ylabel('Etap', fontsize=12)
         
         plt.suptitle('Analiza wykorzystania skali 1-25 przez sędziów', fontsize=16, fontweight='bold', y=1.02)
@@ -217,14 +217,16 @@ class ChopinVisualization:
         ax4.grid(True, alpha=0.3)
         
         # Dodaj legendę kwadrantów
-        ax4.text(0.02, 0.98, 'Surowi\nKonsystentni', transform=ax4.transAxes, 
-                fontsize=9, va='top', alpha=0.5)
-        ax4.text(0.98, 0.98, 'Łagodni\nKonsystentni', transform=ax4.transAxes, 
-                fontsize=9, va='top', ha='right', alpha=0.5)
-        ax4.text(0.02, 0.02, 'Surowi\nZmienni', transform=ax4.transAxes, 
-                fontsize=9, alpha=0.5)
-        ax4.text(0.98, 0.02, 'Łagodni\nZmienni', transform=ax4.transAxes, 
-                fontsize=9, ha='right', alpha=0.5)
+        bbox_style = dict(boxstyle='round,pad=0.5', facecolor='peachpuff',
+                          edgecolor='darkorange', alpha=0.8, linewidth=1.5)
+        ax4.text(0.07, 0.93, 'Surowi\nKonsystentni', transform=ax4.transAxes,
+                fontsize=9, va='top', alpha=1, bbox=bbox_style)
+        ax4.text(0.93, 0.93, 'Łagodni\nKonsystentni', transform=ax4.transAxes,
+                fontsize=9, va='top', ha='right', alpha=1, bbox=bbox_style)
+        ax4.text(0.07, 0.07, 'Surowi\nZmienni', transform=ax4.transAxes,
+                fontsize=9, alpha=1, bbox=bbox_style)
+        ax4.text(0.93, 0.07, 'Łagodni\nZmienni', transform=ax4.transAxes,
+                fontsize=9, ha='right', alpha=1, bbox=bbox_style)
         
         plt.suptitle('Analiza tendencji sędziowskich', fontsize=16, fontweight='bold', y=1.02)
         plt.tight_layout()
@@ -232,8 +234,140 @@ class ChopinVisualization:
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches='tight')
         plt.close()
-    
+
     def visualize_judge_alliances(self, save_path: str = None):
+        """
+        Wizualizuje korelacje i potencjalne sojusze między sędziami
+        """
+        if not self.analyzer:
+            print("Brak obiektu analyzer. Uruchom najpierw advanced_analyzer.")
+            return
+
+        correlation_matrix, alliances = self.analyzer.analyze_judge_alliances(threshold=0.6)
+
+        # Sprawdź czy są jakieś sojusze
+        has_alliances = not alliances.empty
+
+        # Utwórz odpowiednią siatkę wykresów
+        if has_alliances:
+            fig, axes = plt.subplots(2, 2, figsize=(18, 16))
+            ax1 = axes[0, 0]
+            ax2 = axes[0, 1]
+            ax3 = axes[1, 0]
+            ax4 = axes[1, 1]
+        else:
+            fig, axes = plt.subplots(1, 2, figsize=(18, 8))
+            ax1 = axes[0]
+            ax2 = axes[1]
+
+        # 1. Heatmapa korelacji
+        mask = np.triu(np.ones_like(correlation_matrix, dtype=bool))
+        sns.heatmap(correlation_matrix, mask=mask, annot=True, fmt='.2f',
+                    cmap='coolwarm', center=0.5, vmin=0, vmax=1,
+                    square=True, ax=ax1, cbar_kws={'label': 'Korelacja'})
+        ax1.set_title('Macierz korelacji ocen między sędziami', fontsize=14, fontweight='bold')
+
+        # 2. Dendrogram - hierarchiczne grupowanie
+        if len(correlation_matrix) > 1:
+            # Przekształć korelację na odległość
+            distance_matrix = 1 - correlation_matrix.fillna(0)
+            np.fill_diagonal(distance_matrix.values, 0)
+
+            # Upewnij się, że macierz jest symetryczna
+            distance_matrix = (distance_matrix + distance_matrix.T) / 2
+
+            # Konwertuj do condensed form
+            condensed_distances = squareform(distance_matrix)
+
+            # Twórz dendrogram
+            linkage_matrix = linkage(condensed_distances, method='ward')
+            dendrogram(linkage_matrix, labels=correlation_matrix.index.tolist(),
+                       ax=ax2, orientation='right')
+            ax2.set_title('Dendrogram - grupowanie sędziów', fontsize=14, fontweight='bold')
+            ax2.set_xlabel('Odległość')
+
+        # 3 i 4. Network graph i tabela - tylko jeśli są sojusze
+        if has_alliances:
+            # 3. Network graph sojuszy
+            strong_alliances = alliances[alliances['correlation'] > 0.7]
+
+            # Prosty wykres sieciowy
+            ax3.set_title('Silne sojusze sędziowskie (korelacja > 0.7)', fontsize=14, fontweight='bold')
+
+            # Utwórz pozycje węzłów w okręgu
+            n_judges = len(self.judge_columns)
+            angles = np.linspace(0, 2 * np.pi, n_judges, endpoint=False)
+            x = np.cos(angles)
+            y = np.sin(angles)
+
+            # Rysuj węzły
+            ax3.scatter(x, y, s=500, c='lightblue', edgecolors='navy', linewidth=2, alpha=0.7)
+
+            # Dodaj etykiety
+            for i, judge in enumerate(self.judge_columns):
+                ax3.annotate(judge.split()[-1], (x[i] * 1.15, y[i] * 1.15),
+                             ha='center', va='center', fontsize=9)
+
+            # Rysuj krawędzie dla silnych sojuszy
+            judge_positions = {judge: (x[i], y[i]) for i, judge in enumerate(self.judge_columns)}
+
+            for _, alliance in strong_alliances.iterrows():
+                if alliance['judge1'] in judge_positions and alliance['judge2'] in judge_positions:
+                    pos1 = judge_positions[alliance['judge1']]
+                    pos2 = judge_positions[alliance['judge2']]
+
+                    # Grubość linii proporcjonalna do siły korelacji
+                    linewidth = (alliance['correlation'] - 0.7) * 10
+                    alpha = alliance['correlation']
+
+                    ax3.plot([pos1[0], pos2[0]], [pos1[1], pos2[1]],
+                             'r-', linewidth=linewidth, alpha=alpha)
+
+            ax3.set_xlim([-1.5, 1.5])
+            ax3.set_ylim([-1.5, 1.5])
+            ax3.set_aspect('equal')
+            ax3.axis('off')
+
+            # 4. Top sojusze - tabela
+            ax4.axis('tight')
+            ax4.axis('off')
+
+            top_alliances = alliances.head(10)
+            table_data = []
+            for _, row in top_alliances.iterrows():
+                table_data.append([
+                    row['judge1'].split()[-1],
+                    row['judge2'].split()[-1],
+                    f"{row['correlation']:.3f}",
+                    row['strength']
+                ])
+
+            table = ax4.table(cellText=table_data,
+                              colLabels=['Sędzia 1', 'Sędzia 2', 'Korelacja', 'Siła'],
+                              cellLoc='center',
+                              loc='center',
+                              colWidths=[0.25, 0.25, 0.25, 0.25])
+            table.auto_set_font_size(False)
+            table.set_fontsize(10)
+            table.scale(1, 2)
+
+            # Koloruj komórki według siły
+            for i, row in enumerate(top_alliances.itertuples()):
+                if row.strength == 'strong':
+                    table[(i + 1, 3)].set_facecolor('#90EE90')
+                else:
+                    table[(i + 1, 3)].set_facecolor('#FFE4B5')
+
+            ax4.set_title('Top 10 sojuszy sędziowskich', fontsize=14, fontweight='bold', pad=20)
+
+        plt.suptitle('Analiza korelacji i sojuszy między sędziami', fontsize=16, fontweight='bold', y=1.02)
+        plt.tight_layout()
+
+        if save_path:
+            plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.close()
+
+    def visualize_judge_alliances_old(self, save_path: str = None):
         """
         Wizualizuje korelacje i potencjalne sojusze między sędziami
         """
@@ -410,7 +544,7 @@ class ChopinVisualization:
                   for x in removal_sorted4['top10_changes']]
         bars4 = ax4.barh(removal_sorted4['judge_removed'], removal_sorted4['top10_changes'], 
                         color=colors4)
-        ax4.set_xlabel('Liczba zmian w TOP 10', fontsize=12)
+        ax4.set_xlabel('Liczba zmian wśród finalistów ', fontsize=12)
         ax4.set_title('Wpływ na czołówkę konkursu', fontsize=14, fontweight='bold')
         ax4.grid(True, alpha=0.3)
         
@@ -600,7 +734,7 @@ class ChopinVisualization:
         ax4.set_title('Podsumowanie: wszyscy dotknięci uczestnicy',
                       fontsize=12, fontweight='bold', pad=10)
 
-        plt.suptitle('Wpływ usunięcia sędziego na kwalifikacje w konkursie',
+        plt.suptitle('Wpływ usunięcia sędziego na kwalifikacje do kolejnych rund',
                      fontsize=15, fontweight='bold', y=0.995)
 
         if save_path:
@@ -639,7 +773,7 @@ class ChopinVisualization:
         axes = axes.flatten()
 
         # Kolory tła na przemian
-        bg_colors = ['#f8f9fa', '#ffffff']
+        bg_colors = ['#dddddd', '#eeeeee']
 
         # Dla każdego sędziego stwórz subplot z tabelą
         for idx, judge in enumerate(judges):
@@ -1171,7 +1305,7 @@ class ChopinVisualization:
         bars1 = ax1.bar(x - width/2, favs, width, label='Faworyci', color='green', alpha=0.7)
         bars2 = ax1.bar(x + width/2, unfavs, width, label='Niefaworyci', color='red', alpha=0.7)
         
-        ax1.set_xlabel('Sędzia', fontsize=12)
+        # ax1.set_xlabel('Sędzia', fontsize=12)
         ax1.set_ylabel('Liczba uczestników', fontsize=12)
         ax1.set_title('Liczba faworytów i niefaworytów per sędzia', fontsize=14, fontweight='bold')
         ax1.set_xticks(x)
@@ -1211,8 +1345,8 @@ class ChopinVisualization:
             table_data = []
             for _, row in top_favorites.iterrows():
                 table_data.append([
-                    row['judge'].split()[-1],
-                    row['participant_name'].split()[-1],
+                    row['judge'],
+                    row['participant_name'],
                     f"+{row['avg_difference']:.2f}",
                     f"{int(row['n_stages'])}"
                 ])
@@ -1243,8 +1377,8 @@ class ChopinVisualization:
             table_data2 = []
             for _, row in top_unfavorites.iterrows():
                 table_data2.append([
-                    row['judge'].split()[-1],
-                    row['participant_name'].split()[-1],
+                    row['judge'],
+                    row['participant_name'],
                     f"{row['avg_difference']:.2f}",
                     f"{int(row['n_stages'])}"
                 ])

@@ -59,6 +59,8 @@ def main():
     os.makedirs(base_dir, exist_ok=True)
     tmp_dir = os.path.join(base_dir, 'tmp')
     os.makedirs(tmp_dir, exist_ok=True)
+    adv_vis_dir = os.path.join(tmp_dir, 'advanced_visualizations')
+    os.makedirs(adv_vis_dir, exist_ok=True)
 
     # 1. Data processing
     print("[1/9] Loading and processing competition data...")
@@ -80,7 +82,7 @@ def main():
     norm_dir = os.path.join(tmp_dir, 'normalisation_analysis')
     os.makedirs(norm_dir, exist_ok=True)
     # The analyse_normalization_impact function prints and saves its own files
-    analyze_normalization_impact(save_path = 'visualizations/normalization_comparison.png')
+    analyze_normalization_impact(save_path = f'{adv_vis_dir}/normalization_comparison.png')
 
     # 4. Multistage clustering and advanced visualisations
     print("[4/9] Running multistage clustering analyses...")
@@ -96,8 +98,6 @@ def main():
     # Run multistage analysis using original CSVs rather than the processor object
     multistage_analyzer = run_multistage_analysis(data_files, output_dir=os.path.join(tmp_dir, 'multistage_analysis'))
     # Generate advanced multistage visualisations
-    adv_vis_dir = os.path.join(tmp_dir, 'advanced_visualizations')
-    os.makedirs(adv_vis_dir, exist_ok=True)
     run_advanced_visualizations(multistage_analyzer, output_dir=adv_vis_dir)
 
     # 5. Controversy and statistical analyses
@@ -151,11 +151,11 @@ def main():
         '16_score_diversity_heatmap.png': '20_score_diversity_heatmap.png',
         '17_score_diversity_analysis.png': '21_score_diversity_analysis.png',
         '18_outliers_analysis.png': '22_outliers_analysis.png',
-        '19_ranking_stability.png': '23_ranking_stability.png',
-        '20_statistical_significance.png': '24_statistical_significance.png',
-        '21_pairwise_agreement.png': '25_pairwise_agreement.png',
-        '22_clustering_results.png': '26_clustering_results.png',
-        '23_pca_judges.png': '27_pca_judges.png'
+        # '19_ranking_stability.png': '23_ranking_stability.png',
+        # '20_statistical_significance.png': '24_statistical_significance.png',
+        '21_pairwise_agreement.png': '23_pairwise_agreement.png',
+        '22_clustering_results.png': '24_clustering_results.png',
+        '23_pca_judges.png': '25_pca_judges.png'
     }
 
     # Copy and rename files based on mapping

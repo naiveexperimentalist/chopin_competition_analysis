@@ -58,8 +58,8 @@ class ChopinStatisticalVisualization:
                     'Odchylenia ocen sędziów od średniej dla każdego uczestnika\n' +
                     '(im większe różnice, tym bardziej zróżnicowane opinie)',
                     fontsize=16, fontweight='bold', pad=20)
-        ax.set_xlabel('Sędzia', fontsize=12)
-        ax.set_ylabel('Uczestnik (Nr: Nazwisko)', fontsize=12)
+        ax.set_xlabel('', fontsize=12)
+        ax.set_ylabel('Uczestnik', fontsize=12)
         
         plt.tight_layout()
         
@@ -783,11 +783,11 @@ class ChopinStatisticalVisualization:
         
         # Stabilność rankingu
         if self.statistical_analyzer:
-            print("  - Stabilność rankingu")
-            self.visualize_ranking_stability('final', f'{output_dir}/19_ranking_stability.png')
+            # print("  - Stabilność rankingu")
+            # self.visualize_ranking_stability('final', f'{output_dir}/19_ranking_stability.png')
             
-            print("  - Istotność statystyczna")
-            self.visualize_statistical_significance('final', f'{output_dir}/20_statistical_significance.png')
+            # print("  - Istotność statystyczna")
+            # self.visualize_statistical_significance('final', f'{output_dir}/20_statistical_significance.png')
             
             print("  - Pair-wise agreement")
             self.visualize_pairwise_agreement(f'{output_dir}/21_pairwise_agreement.png')

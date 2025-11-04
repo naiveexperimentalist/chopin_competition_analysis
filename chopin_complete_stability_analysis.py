@@ -375,11 +375,11 @@ class StabilityVisualizer:
         # Przedziały ufności
         ax1 = axes[0]
         y_pos = range(len(ci_df))
-        ax1.errorbar(ci_df['actual_score'], y_pos, 
-                    xerr=[ci_df['actual_score'] - ci_df['ci_low'],
-                          ci_df['ci_high'] - ci_df['actual_score']],
-                    fmt='o', markersize=6, capsize=5, capthick=2,
-                    alpha=0.7, label=f'{confidence*100:.0f}% przedział ufności')
+        # ax1.errorbar(ci_df['actual_score'], y_pos,
+        #             xerr=[ci_df['actual_score'] - ci_df['ci_low'],
+        #                   ci_df['ci_high'] - ci_df['actual_score']],
+        #             fmt='o', markersize=6, capsize=5, capthick=2,
+        #             alpha=0.7, label=f'{confidence*100:.0f}% przedział ufności')
         
         ax1.set_yticks(y_pos)
         ax1.set_yticklabels([f"{row['rank']}. {row['participant'][:30]}" 

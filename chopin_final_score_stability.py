@@ -384,7 +384,7 @@ class FinalScoreStabilityVisualizer:
                             for _, row in top_unstable.iterrows()], fontsize=8)
         ax2.set_xlabel('Szerokość przedziału ufności (punkty)', fontsize=12)
         ax2.set_ylabel('Uczestnik', fontsize=12)
-        ax2.set_title('Top 30 najbardziej niestabilnych wyników\n' +
+        ax2.set_title('Niestabilność wyników\n' +
                      '(im szerszy przedział, tym większa niepewność)',
                      fontsize=14, fontweight='bold')
         ax2.grid(True, alpha=0.3, axis='x')
@@ -460,7 +460,7 @@ class FinalScoreStabilityVisualizer:
         ax.set_xlabel('Możliwa pozycja w rankingu', fontsize=12)
         ax.set_ylabel('Uczestnik (rzeczywista pozycja. nazwisko)', fontsize=12)
         ax.set_title('Macierz stabilności rankingu - Finaliści\n' +
-                    'Prawdopodobieństwo zajęcia danej pozycji w bootstrapie',
+                    'Prawdopodobieństwo zajęcia danej pozycji bootstrapie',
                     fontsize=16, fontweight='bold', pad=20)
         
         plt.tight_layout()

@@ -152,7 +152,7 @@ def create_analysis_report(processor, analyzer, visualizer, output_dir='full_ana
     print(f"Raport tekstowy zapisany w: {report_path}")
 
 
-def visualize_normalization_comparison(normalization_results: dict, save_path: str = None):
+def visualize_normalization_comparison_old(normalization_results: dict, save_path: str = None):
     """
     Wizualizuje porównanie końcowych wyników dla różnych metod normalizacji.
     Tworzy 3 tabelki obok siebie (jedna dla każdej normalizacji).
@@ -176,7 +176,7 @@ def visualize_normalization_comparison(normalization_results: dict, save_path: s
     fig, axes = plt.subplots(1, 3, figsize=(24, 11))
 
     # Kolory tła na przemian dla wierszy
-    bg_colors = ['#f8f9fa', '#ffffff']
+    bg_colors = ['#eeeeee', '#dddddd']
 
     for idx, norm_method in enumerate(norm_methods):
         ax = axes[idx]
@@ -268,6 +268,177 @@ def visualize_normalization_comparison(normalization_results: dict, save_path: s
             ax.text(0.85, y_pos, score, ha='center', va='center',
                     fontsize=10, color='black', fontweight='bold',
                     transform=ax.transAxes, zorder=2)
+
+        # Ramka zewnętrzna
+        rect = mpatches.Rectangle((0.05, y_start - n_participants * line_height),
+                                  0.90, n_participants * line_height,
+                                  linewidth=1.5, edgecolor='black',
+                                  facecolor='none', transform=ax.transAxes, zorder=4)
+        ax.add_patch(rect)
+
+    # Tytuł główny
+    fig.suptitle('Porównanie rankingów końcowych dla różnych metod normalizacji wyników',
+                 fontsize=16, fontweight='bold', y=0.98)
+
+    plt.tight_layout(rect=[0, 0, 1, 0.97])
+
+    if save_path is None:
+        save_path = 'normalization_comparison.png'
+
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    print(f"✓ Zapisano wizualizację porównania normalizacji do: {save_path}")
+    plt.close()
+
+
+def visualize_normalization_comparison(normalization_results: dict, save_path: str = None):
+    """
+    Wizualizuje porównanie końcowych wyników dla różnych metod normalizacji.
+    Tworzy 3 tabelki obok siebie (jedna dla każdej normalizacji).
+
+    Uczestnicy z rank=999 są wyświetleni na końcu i przekreśleni.
+
+    Args:
+        normalization_results: dict z kluczami 'zscore', 'minmax', 'rank' zawierający DataFrames
+        save_path: ścieżka do zapisu pliku
+    """
+    import matplotlib.pyplot as plt
+    import matplotlib.patches as mpatches
+
+    # Kolejność metod normalizacji
+    norm_methods = ['zscore', 'minmax', 'rank']
+    method_labels = {
+        'zscore': 'Z-Score',
+        'minmax': 'Min-Max',
+        'rank': 'Rank'
+    }
+
+    # Figura z 3 subplotami obok siebie
+    fig, axes = plt.subplots(1, 3, figsize=(24, 11))
+
+    # Kolory tła na przemian dla wierszy
+    bg_colors = ['#eeeeee', '#dddddd']
+
+    for idx, norm_method in enumerate(norm_methods):
+        ax = axes[idx]
+        ax.axis('off')
+
+        # Pobierz dane dla tej metody
+        df = normalization_results[norm_method].copy()
+
+        # 1. ZMIANA SORTOWANIA:
+        # Sortuj najpierw po rank (malejąco), a następnie po cumulative_score (malejąco).
+        # Używamy False dla rank, aby 1 < 2 < 3, a True dla rank, aby 999 było na końcu.
+        # Konwencjonalnie: sortujemy najpierw po rank (rosnąco), a 999 traktujemy jako dużą liczbę.
+        df_sorted = df.sort_values(
+            ['rank', 'cumulative_score'],
+            ascending=[True, False]
+        ).reset_index(drop=True)
+
+        # 2. UWZGLĘDNIAMY WSZYSTKICH UCZESTNIKÓW (w tym rank=999)
+        n_participants = len(df_sorted)
+
+        # Tło
+        bg_color = bg_colors[idx % 2]
+        rect_bg = mpatches.Rectangle((0, 0), 1, 1,
+                                     linewidth=0,
+                                     facecolor=bg_color,
+                                     transform=ax.transAxes, zorder=0)
+        ax.add_patch(rect_bg)
+
+        # Tytuł metody normalizacji
+        ax.text(0.5, 0.97, f'Normalizacja: {method_labels[norm_method]}',
+                ha='center', va='top', fontsize=13, fontweight='bold',
+                transform=ax.transAxes)
+
+        # Parametry tabelki
+        y_start = 0.91
+        line_height = 0.082
+
+        # Nagłówki kolumn
+        header_y = y_start + 0.015
+        ax.text(0.10, header_y, 'Poz.', ha='center', va='center',
+                fontsize=10, fontweight='bold', transform=ax.transAxes)
+        ax.text(0.42, header_y, 'Uczestnik', ha='left', va='center',
+                fontsize=10, fontweight='bold', transform=ax.transAxes)
+        ax.text(0.85, header_y, 'Wynik', ha='center', va='center',
+                fontsize=10, fontweight='bold', transform=ax.transAxes)
+
+        # Rysuj linie poziome
+        for i in range(n_participants + 1):
+            y_line = y_start - i * line_height
+            ax.plot([0.05, 0.95], [y_line, y_line], 'k-', linewidth=0.5,
+                    alpha=0.3, transform=ax.transAxes, zorder=1)
+
+        # Rysuj linie pionowe
+        col_positions = [0.05, 0.18, 0.75, 0.95]
+        for x_pos in col_positions:
+            ax.plot([x_pos, x_pos], [y_start, y_start - n_participants * line_height],
+                    'k-', linewidth=0.5, alpha=0.3, transform=ax.transAxes, zorder=1)
+
+        # Kolory dla podium
+        rank_colors = {
+            1: '#FFD700',  # Złoty
+            2: '#C0C0C0',  # Srebrny
+            3: '#CD7F32'  # Brązowy
+        }
+
+        # Rysuj wiersze z danymi
+        for i, (_, row) in enumerate(df_sorted.iterrows()):
+            y_pos = y_start - (i + 0.5) * line_height
+
+            rank = int(row['rank'])
+            participant = f"{int(row['Nr'])}. {row['imię']} {row['nazwisko']}"
+            score = f"{row['cumulative_score']:.2f}"
+
+            # Ustawienia przekreślenia i koloru tekstu
+            text_color = 'black'
+            strikethrough_settings = {}
+            rank_label = f"{rank}."
+
+            # 3. DODANIE PRZEKREŚLENIA DLA RANK=999
+            if rank == 999:
+                text_color = 'gray'  # Przyciemnij tekst
+                rank_label = 'n/a'  # Zmień etykietę pozycji
+                # Przekreślenie przez rysowanie linii poziomej dla każdego tekstu
+                # (Najprostsza i najczystsza metoda w Matplotlib)
+
+                # Rysowanie przekreślenia dla uczestnika
+                ax.plot([0.20, 0.73], [y_pos, y_pos],
+                        'r-', linewidth=1.0, alpha=0.6, transform=ax.transAxes, zorder=3)
+
+                # Rysowanie przekreślenia dla wyniku
+                ax.plot([0.76, 0.94], [y_pos, y_pos],
+                        'r-', linewidth=1.0, alpha=0.6, transform=ax.transAxes, zorder=3)
+
+                # Kolor tła dla podium (pomijamy dla 999)
+
+            else:
+                # Kolor tła dla podium
+                if rank in rank_colors:
+                    rect_highlight = mpatches.Rectangle(
+                        (0.05, y_start - (i + 1) * line_height),
+                        0.90, line_height,
+                        linewidth=0,
+                        facecolor=rank_colors[rank],
+                        alpha=0.15,
+                        transform=ax.transAxes, zorder=1
+                    )
+                    ax.add_patch(rect_highlight)
+
+            # Pozycja w rankingu
+            ax.text(0.115, y_pos, rank_label, ha='center', va='center',
+                    fontsize=10, color=text_color, fontweight='bold' if rank != 999 else 'normal',
+                    transform=ax.transAxes, zorder=2, **strikethrough_settings)
+
+            # Uczestnik
+            ax.text(0.20, y_pos, participant, ha='left', va='center',
+                    fontsize=10, color=text_color,
+                    transform=ax.transAxes, zorder=2, **strikethrough_settings)
+
+            # Wynik skumulowany
+            ax.text(0.85, y_pos, score, ha='center', va='center',
+                    fontsize=10, color=text_color, fontweight='bold',
+                    transform=ax.transAxes, zorder=2, **strikethrough_settings)
 
         # Ramka zewnętrzna
         rect = mpatches.Rectangle((0.05, y_start - n_participants * line_height),
@@ -413,7 +584,7 @@ def analyze_normalization_impact(save_path):
     comparison_df = pd.DataFrame(comparison_data)
     
     # Wypisz największe zmiany
-    print("TOP 10 największych zmian po normalizacji Z-score:")
+    print("Najistotniejsze zmiany po normalizacji Z-score:")
     if 'zscore_rank_change' in comparison_df.columns:
         top_changes = comparison_df.nlargest(10, 'zscore_rank_change', keep='all')
         for _, row in top_changes.iterrows():

@@ -18,48 +18,50 @@ plt.style.use('seaborn-v0_8-darkgrid')
 sns.set_palette("husl")
 
 
-def visualize_pca_participants(analyzer, n_components=3, min_stages=2, 
+def visualize_pca_participants(analyzer, n_components=3, min_stages=2,
                                save_path='participant_pca.png'):
     """
     PCA dla uczestników - projekcja w przestrzeni 2D/3D
     Pokazuje klastry uczestników w zredukowanej przestrzeni
     """
+    from matplotlib.colors import ListedColormap
+
     profile_df, participant_info = analyzer.build_participant_multistage_matrix()
-    
+
     # Filtruj uczestników
-    valid_participants = [nr for nr, info in participant_info.items() 
-                         if len(info['stages']) >= min_stages]
+    valid_participants = [nr for nr, info in participant_info.items()
+                          if len(info['stages']) >= min_stages]
     profile_df = profile_df.loc[valid_participants]
     profile_df = profile_df.dropna(axis=1, how='all')
-    
+
     # Usuń uczestników z zbyt małą liczbą ocen
     min_valid_scores = len(profile_df.columns) * 0.3
     valid_rows = profile_df.count(axis=1) >= min_valid_scores
     profile_df = profile_df[valid_rows]
-    
+
     if len(profile_df) < 5:
         print("Za mało uczestników dla PCA")
         return None, None, pd.DataFrame()
-    
+
     # Wypełnij braki
     profile_df_filled = profile_df.fillna(profile_df.mean())
     if profile_df_filled.isnull().any().any():
         profile_df_filled = profile_df_filled.fillna(profile_df_filled.mean().mean())
-    
+
     # Standaryzacja
     scaler = StandardScaler()
     profile_scaled = scaler.fit_transform(profile_df_filled)
-    
+
     # Sprawdź wartości nieskończone
     if not np.isfinite(profile_scaled).all():
         print("UWAGA: Zamiana wartości nieskończonych na 0")
         profile_scaled = np.nan_to_num(profile_scaled, nan=0.0, posinf=0.0, neginf=0.0)
-    
+
     # PCA
     n_components = min(n_components, len(profile_df_filled), len(profile_df_filled.columns))
     pca = PCA(n_components=n_components)
     pca_components = pca.fit_transform(profile_scaled)
-    
+
     # K-means dla kolorowania
     from sklearn.cluster import KMeans
     n_clusters = min(5, len(profile_df_filled) // 2)
@@ -68,68 +70,78 @@ def visualize_pca_participants(analyzer, n_components=3, min_stages=2,
         clusters = kmeans.fit_predict(profile_scaled)
     else:
         clusters = np.zeros(len(profile_df_filled), dtype=int)
-    
+
+    # Przygotuj dyskretną paletę kolorów
+    colors = sns.color_palette("Set1", n_clusters)
+    cmap = ListedColormap(colors)
+
     # Wizualizacja
     if n_components >= 2:
         fig = plt.figure(figsize=(18, 6))
-        
+
         # 2D scatter (PC1 vs PC2)
         ax1 = fig.add_subplot(131)
         scatter = ax1.scatter(pca_components[:, 0], pca_components[:, 1],
-                            c=clusters, cmap='Set1', s=100, alpha=0.7, edgecolors='black')
+                              c=clusters, cmap=cmap, s=100, alpha=0.7, edgecolors='black',
+                              vmin=0, vmax=n_clusters - 1)
         ax1.set_xlabel(f'PC1 ({pca.explained_variance_ratio_[0]:.2%} wariancji)', fontsize=12)
         ax1.set_ylabel(f'PC2 ({pca.explained_variance_ratio_[1]:.2%} wariancji)', fontsize=12)
         ax1.set_title('PCA: PC1 vs PC2', fontsize=14, fontweight='bold')
         ax1.grid(True, alpha=0.3)
-        plt.colorbar(scatter, ax=ax1, label='Klaster')
-        
+        cbar1 = plt.colorbar(scatter, ax=ax1, label='Klaster')
+        cbar1.set_ticks(range(n_clusters))
+
         # Dodaj etykiety dla wybranych punktów (finaliści)
-        finalists = [nr for nr in valid_participants 
-                    if 'final' in participant_info[nr]['stages']]
+        finalists = [nr for nr in valid_participants
+                     if 'final' in participant_info[nr]['stages']]
         for i, nr in enumerate(profile_df_filled.index):
             if nr in finalists:
                 info = participant_info[nr]
-                ax1.annotate(f"{nr}", 
-                           (pca_components[i, 0], pca_components[i, 1]),
-                           fontsize=8, alpha=0.7)
-        
+                ax1.annotate(f"{nr}",
+                             (pca_components[i, 0], pca_components[i, 1]),
+                             fontsize=8, alpha=0.7)
+
         if n_components >= 3:
             # 2D scatter (PC1 vs PC3)
             ax2 = fig.add_subplot(132)
             scatter2 = ax2.scatter(pca_components[:, 0], pca_components[:, 2],
-                                 c=clusters, cmap='Set1', s=100, alpha=0.7, edgecolors='black')
+                                   c=clusters, cmap=cmap, s=100, alpha=0.7, edgecolors='black',
+                                   vmin=0, vmax=n_clusters - 1)
             ax2.set_xlabel(f'PC1 ({pca.explained_variance_ratio_[0]:.2%} wariancji)', fontsize=12)
             ax2.set_ylabel(f'PC3 ({pca.explained_variance_ratio_[2]:.2%} wariancji)', fontsize=12)
             ax2.set_title('PCA: PC1 vs PC3', fontsize=14, fontweight='bold')
             ax2.grid(True, alpha=0.3)
-            plt.colorbar(scatter2, ax=ax2, label='Klaster')
-            
+            cbar2 = plt.colorbar(scatter2, ax=ax2, label='Klaster')
+            cbar2.set_ticks(range(n_clusters))
+
             # 2D scatter (PC2 vs PC3)
             ax3 = fig.add_subplot(133)
             scatter3 = ax3.scatter(pca_components[:, 1], pca_components[:, 2],
-                                 c=clusters, cmap='Set1', s=100, alpha=0.7, edgecolors='black')
+                                   c=clusters, cmap=cmap, s=100, alpha=0.7, edgecolors='black',
+                                   vmin=0, vmax=n_clusters - 1)
             ax3.set_xlabel(f'PC2 ({pca.explained_variance_ratio_[1]:.2%} wariancji)', fontsize=12)
             ax3.set_ylabel(f'PC3 ({pca.explained_variance_ratio_[2]:.2%} wariancji)', fontsize=12)
             ax3.set_title('PCA: PC2 vs PC3', fontsize=14, fontweight='bold')
             ax3.grid(True, alpha=0.3)
-            plt.colorbar(scatter3, ax=ax3, label='Klaster')
-    
+            cbar3 = plt.colorbar(scatter3, ax=ax3, label='Klaster')
+            cbar3.set_ticks(range(n_clusters))
+
     plt.suptitle('Analiza PCA uczestników\n' +
-                'Projekcja profili wieloetapowych w przestrzeni głównych komponentów',
-                fontsize=16, fontweight='bold', y=1.02)
-    
+                 'Projekcja profili wieloetapowych w przestrzeni głównych komponentów',
+                 fontsize=16, fontweight='bold', y=1.02)
+
     plt.tight_layout()
     plt.savefig(save_path, dpi=300, bbox_inches='tight')
     plt.close()
     print(f"Zapisano PCA uczestników: {save_path}")
-    
+
     # Zwróć wyjaśnioną wariancję
     variance_df = pd.DataFrame({
-        'component': [f'PC{i+1}' for i in range(n_components)],
+        'component': [f'PC{i + 1}' for i in range(n_components)],
         'variance_explained': pca.explained_variance_ratio_,
         'cumulative_variance': np.cumsum(pca.explained_variance_ratio_)
     })
-    
+
     return pca, pca_components, variance_df
 
 
@@ -137,37 +149,39 @@ def visualize_pca_judges(analyzer, save_path='judge_pca.png'):
     """
     PCA dla sędziów - pokazuje podobieństwa w stylach oceniania
     """
+    from matplotlib.colors import ListedColormap
+
     profile_df = analyzer.build_judge_multistage_matrix()
     profile_df = profile_df.dropna(axis=1, how='all')
-    
+
     # Usuń sędziów z zbyt małą liczbą ocen
     min_valid_scores = len(profile_df.columns) * 0.3
     valid_judges = profile_df.count(axis=1) >= min_valid_scores
     profile_df = profile_df[valid_judges]
-    
+
     if len(profile_df) < 3:
         print("Za mało sędziów dla PCA")
         return
-    
+
     # Wypełnij braki
     profile_df_filled = profile_df.fillna(profile_df.mean(axis=1), axis=0)
     if profile_df_filled.isnull().any().any():
         profile_df_filled = profile_df_filled.fillna(profile_df_filled.mean().mean())
-    
+
     # Standaryzacja
     scaler = StandardScaler()
     profile_scaled = scaler.fit_transform(profile_df_filled)
-    
+
     # Sprawdź wartości nieskończone
     if not np.isfinite(profile_scaled).all():
         print("UWAGA: Zamiana wartości nieskończonych na 0")
         profile_scaled = np.nan_to_num(profile_scaled, nan=0.0, posinf=0.0, neginf=0.0)
-    
+
     # PCA
     n_components = min(3, len(profile_df_filled))
     pca = PCA(n_components=n_components)
     pca_components = pca.fit_transform(profile_scaled)
-    
+
     # K-means dla kolorowania
     from sklearn.cluster import KMeans
     n_clusters = min(3, len(profile_df_filled) // 2)
@@ -176,28 +190,34 @@ def visualize_pca_judges(analyzer, save_path='judge_pca.png'):
         clusters = kmeans.fit_predict(profile_scaled)
     else:
         clusters = np.zeros(len(profile_df_filled), dtype=int)
-    
+
+    # Przygotuj dyskretną paletę kolorów
+    colors = sns.color_palette("Set1", n_clusters)
+    cmap = ListedColormap(colors)
+
     # Wizualizacja
     fig, ax = plt.subplots(figsize=(14, 10))
-    
+
     scatter = ax.scatter(pca_components[:, 0], pca_components[:, 1],
-                        c=clusters, cmap='Set1', s=300, alpha=0.7, edgecolors='black')
-    
+                         c=clusters, cmap=cmap, s=300, alpha=0.7, edgecolors='black',
+                         vmin=0, vmax=n_clusters - 1)
+
     # Etykiety sędziów
     for i, judge in enumerate(profile_df_filled.index):
-        ax.annotate(judge, 
-                   (pca_components[i, 0], pca_components[i, 1]),
-                   fontsize=10, ha='center', va='center',
-                   bbox=dict(boxstyle='round,pad=0.3', facecolor='yellow', alpha=0.3))
-    
+        ax.annotate(judge,
+                    (pca_components[i, 0] + 2.0, pca_components[i, 1] + 0.42),
+                    fontsize=10, ha='center', va='center',
+                    bbox=dict(boxstyle='round,pad=0.3', facecolor='yellow', alpha=0.3))
+
     ax.set_xlabel(f'PC1 ({pca.explained_variance_ratio_[0]:.2%} wariancji)', fontsize=12)
     ax.set_ylabel(f'PC2 ({pca.explained_variance_ratio_[1]:.2%} wariancji)', fontsize=12)
     ax.set_title('Analiza PCA sędziów\n' +
-                'Podobieństwa w stylach oceniania przez wszystkie etapy',
-                fontsize=16, fontweight='bold', pad=20)
+                 'Podobieństwa w stylach oceniania przez wszystkie etapy',
+                 fontsize=16, fontweight='bold', pad=20)
     ax.grid(True, alpha=0.3)
-    plt.colorbar(scatter, ax=ax, label='Klaster')
-    
+    cbar = plt.colorbar(scatter, ax=ax, label='Klaster')
+    cbar.set_ticks(range(n_clusters))
+
     plt.tight_layout()
     plt.savefig(save_path, dpi=300, bbox_inches='tight')
     plt.close()
@@ -210,48 +230,152 @@ def visualize_multistage_heatmap(analyzer, save_path='multistage_heatmap.png'):
     Wiersze: uczestnicy, Kolumny: sędzia_etap
     """
     profile_df, participant_info = analyzer.build_participant_multistage_matrix()
-    
     # Ogranicz do uczestników którzy przeszli przez >= 2 etapy
     valid_participants = [nr for nr, info in participant_info.items() 
                          if len(info['stages']) >= 2]
     profile_df = profile_df.loc[valid_participants]
-    
-    # Sortuj kolumny według etapu i sędziego
-    stage_order = ['stage1', 'stage2', 'stage3', 'final']
-    
-    def sort_key(col):
-        parts = col.rsplit('_', 1)
-        if len(parts) == 2:
-            judge, stage = parts
-            stage_idx = stage_order.index(stage) if stage in stage_order else 999
-            return (stage_idx, judge)
-        return (999, col)
-    
-    sorted_columns = sorted(profile_df.columns, key=sort_key)
-    profile_df = profile_df[sorted_columns]
-    
-    # Etykiety uczestników
-    row_labels = [f"{nr}: {participant_info[nr]['nazwisko']}" 
-                 for nr in profile_df.index]
-    
-    # Sortuj uczestników po średniej ocenie
-    row_means = profile_df.mean(axis=1)
-    sorted_indices = row_means.sort_values(ascending=False).index
-    profile_df = profile_df.loc[sorted_indices]
-    row_labels = [f"{nr}: {participant_info[nr]['nazwisko']}" 
-                 for nr in sorted_indices]
-    
+
+    self_weights = {
+        'stage1_cumulative': {'stage1': 1.0},
+        'stage2_cumulative': {'stage1': 0.30, 'stage2': 0.70},
+        'stage3_cumulative': {'stage1': 0.10, 'stage2': 0.20, 'stage3': 0.70},
+        'final_cumulative': {'stage1': 0.10, 'stage2': 0.20, 'stage3': 0.35, 'final': 0.35}
+    }
+
+    # Definicje zakresów kolumn
+    stage_cols = {
+        'stage1': profile_df.columns[0:17],  # Indeksy 1 do 17 (17 kolumn)
+        'stage2': profile_df.columns[17:34],  # Indeksy 18 do 34 (17 kolumn)
+        'stage3': profile_df.columns[34:51],  # Indeksy 35 do 51 (17 kolumn)
+        'final': profile_df.columns[51:68]  # Indeksy 52 do 68 (17 kolumn)
+    }
+
+    stage_margin = {
+        'stage1': 3,
+        'stage2': 2,
+        'stage3': 2,
+        'final': 2
+    }
+
+    def calculate_trimmed_mean_from_processor(row: pd.Series, margin: float) -> float:
+        """
+        Adoptowana logika z ChopinCompetitionProcessor.process_scores.
+        Oblicza skorygowaną średnią dla jednego wiersza (uczestnika) ocen.
+        """
+        # Usuwamy NaN (może reprezentować brak oceny lub 's')
+        scores = row.dropna()
+
+        if len(scores) == 0:
+            return np.nan
+
+        # Krok 1: Pierwsza średnia (klucz do korekty)
+        initial_mean = scores.mean().round(2)
+
+        # Przygotowanie skopiowanej serii do korekty
+        corrected_scores = scores.copy()
+        # Krok 2: Korekta ocen
+        for judge in scores.index:
+            score = scores[judge]
+
+            # Sprawdzanie odchylenia
+            if abs(score - initial_mean) > margin:
+                if score > initial_mean:
+                    corrected_scores[judge] = initial_mean + margin
+                else:
+                    corrected_scores[judge] = initial_mean - margin
+
+        # Krok 3: Średnia po korekcie
+        final_avg = corrected_scores.mean().round(2)
+
+        return final_avg
+
+    stage_means = {}
+
+    for stage_name, cols in stage_cols.items():
+        stage_df = profile_df[cols]
+        margin = stage_margin[stage_name]
+
+        # Zastosuj funkcję do KAŻDEGO WIERSZA (axis=1)
+        stage_means[stage_name] = stage_df.apply(
+            calculate_trimmed_mean_from_processor,
+            axis=1,
+            margin=margin
+        ).round(2)
+
+    # 2. Oblicz skumulowane, ważone oceny
+    for cumulative_key, weights in self_weights.items():
+        weighted_score = pd.Series(0.0, index=profile_df.index)
+        for stage_name, weight in weights.items():
+            if stage_name in stage_means:
+                # Uwzględnianie tylko dostępnych średnich etapowych
+                # .fillna(0) w tym miejscu nie jest konieczne, bo Nan*waga da Nan,
+                # a suma z Nan da Nan, co jest poprawne, bo nie chcemy sztucznie sumować etapów
+                weighted_score += stage_means[stage_name] * weight
+
+        # Wyniki skumulowane są dodawane do profile_df
+        profile_df[cumulative_key] = round(weighted_score, 2)
+
+    # 3. Obliczanie klucza sortowania (OSTATNI DOSTĘPNY WYNIK * MNOŻNIK)
+    final_ranking_logic = {
+        'final_cumulative': 4,
+        'stage3_cumulative': 3,
+        'stage2_cumulative': 2,
+        'stage1_cumulative': 1,
+    }
+
+    # Inicjalizacja klucza sortowania zerami
+    profile_df['total_weighted_score'] = pd.Series(0.0, index=profile_df.index)
+    cumulative_keys = list(final_ranking_logic.keys())
+
+    # Iteracja po wierszach (uczestnikach)
+    for index in profile_df.index:
+        # Iteracja od najwyższego etapu do najniższego (final_cumulative -> stage1_cumulative)
+        for key, multiplier in final_ranking_logic.items():
+            cumulative_score = profile_df.loc[index, key]
+
+            # Sprawdzamy, czy wynik JEST dostępny (nie NaN)
+            if pd.notna(cumulative_score):
+                # Przypisanie wyniku z najwyższego osiągniętego etapu, pomnożonego przez wagę etapu
+                final_score = cumulative_score * multiplier
+                profile_df.loc[index, 'total_weighted_score'] = round(final_score, 2)
+
+                # Ważne: Przypisano, więc przerywamy wewnętrzną pętlę i przechodzimy do kolejnego uczestnika
+                break
+
+    # 4. Sortowanie DataFrame
+    sorted_profile_df = profile_df.sort_values(
+        by='total_weighted_score',
+        ascending=False
+    )
+    # print(sorted_profile_df)
+    # exit(0)
+
+    # 5. Oczyszczenie z kolumn pomocniczych
+    columns_to_drop = cumulative_keys + ['total_weighted_score']
+
+    final_profile_df = sorted_profile_df.drop(
+        columns=columns_to_drop,
+        axis=1
+    )
+
+    # 6. Generowanie etykiet wierszy dla posortowanego DataFrame
+    # Używamy indeksów (numerów uczestników) z posortowanej ramki danych,
+    # aby uzyskać poprawne etykiety
+    row_labels = [
+        f"{nr}: {participant_info[nr]['imię']} {participant_info[nr]['nazwisko']}"
+        for nr in final_profile_df.index
+    ]
     # Wizualizacja
-    fig, ax = plt.subplots(figsize=(20, max(12, len(profile_df) * 0.3)))
-    
-    sns.heatmap(profile_df, cmap='RdYlGn', center=15, 
+    fig, ax = plt.subplots(figsize=(20, max(12, len(final_profile_df) * 0.3)))
+
+    sns.heatmap(final_profile_df, cmap='RdYlGn', center=15,
                cbar_kws={'label': 'Ocena'},
                yticklabels=row_labels,
-               xticklabels=[col.replace('_', '\n') for col in profile_df.columns],
+               xticklabels=[col.split('_')[0] for col in final_profile_df.columns],
                ax=ax, linewidths=0.5, linecolor='gray')
-    
+
     ax.set_title('Heatmapa wszystkich ocen ze wszystkich etapów\n' +
-                '(uczestnicy posortowani według średniej oceny)',
+                '(uczestnicy posortowani według miejsca zajętego w konkursie)',
                 fontsize=16, fontweight='bold', pad=20)
     ax.set_xlabel('Sędzia_Etap', fontsize=12)
     ax.set_ylabel('Uczestnik', fontsize=12)
@@ -259,15 +383,16 @@ def visualize_multistage_heatmap(analyzer, save_path='multistage_heatmap.png'):
     # Dodaj linie separujące etapy
     stage_boundaries = []
     current_stage = None
-    for i, col in enumerate(profile_df.columns):
+
+    for i, col in enumerate(final_profile_df.columns):
         stage = col.rsplit('_', 1)[-1]
         if stage != current_stage:
             stage_boundaries.append(i)
             current_stage = stage
-    
+
     for boundary in stage_boundaries[1:]:
         ax.axvline(x=boundary, color='blue', linewidth=3, alpha=0.5)
-    
+
     plt.xticks(rotation=90, ha='right', fontsize=8)
     plt.yticks(fontsize=8)
     plt.tight_layout()
@@ -481,7 +606,7 @@ def visualize_participant_trajectories(analyzer, top_n=20, save_path='participan
             ys = [p[1] for p in trajectory_points]
             
             participant_info = progression_df[progression_df['Nr'] == participant_nr].iloc[0]
-            label = f"{participant_nr}: {participant_info['nazwisko']}"
+            label = f"{participant_info['imię']} {participant_info['nazwisko']}"
             
             ax.plot(xs, ys, marker='o', linewidth=2, markersize=8, 
                    color=colors[i], label=label, alpha=0.7)
@@ -510,20 +635,34 @@ def visualize_cluster_evolution(analyzer, save_path='cluster_evolution.png'):
     Pokazuje jak przypisania klastrów zmieniają się między etapami
     (dla uczestników którzy przeszli przez wiele etapów)
     """
-    stage_order = ['stage1', 'stage2', 'stage3', 'final']
-    
-    # Dla każdego etapu, wykonaj klasterowanie
+    import seaborn as sns
     from sklearn.cluster import KMeans
     from sklearn.preprocessing import StandardScaler
-    
+    from matplotlib.colors import ListedColormap
+
+    stage_order = ['stage1', 'stage2', 'stage3', 'final']
+
+    # Zbierz informacje o uczestnikach (imię, nazwisko)
+    participant_info = {}
+    for stage in stage_order:
+        if stage in analyzer.stages_data:
+            df = analyzer.stages_data[stage]
+            for idx, row in df.iterrows():
+                nr = int(row['Nr'])
+                if nr not in participant_info:
+                    participant_info[nr] = {
+                        'imie': row['imię'],
+                        'nazwisko': row['nazwisko']
+                    }
+    # Dla każdego etapu, wykonaj klasterowanie
     stage_clusters = {}
-    
+
     for stage in stage_order:
         if stage not in analyzer.stages_data:
             continue
-            
+
         df = analyzer.stages_data[stage]
-        
+
         # Buduj macierz ocen
         participant_scores = {}
         for idx, row in df.iterrows():
@@ -536,32 +675,32 @@ def visualize_cluster_evolution(analyzer, save_path='cluster_evolution.png'):
                         scores.append(float(score_val))
                     except:
                         pass
-            
+
             if len(scores) > 0:
                 participant_scores[nr] = scores
-        
+
         # Standaryzacja i klasterowanie
         if len(participant_scores) >= 5:
             score_matrix = []
             participant_nrs = []
-            
+
             for nr, scores in participant_scores.items():
                 # Uzupełnij do stałej długości (17 sędziów)
                 padded = scores + [np.nan] * (17 - len(scores))
                 score_matrix.append(padded[:17])
                 participant_nrs.append(nr)
-            
+
             score_df = pd.DataFrame(score_matrix, index=participant_nrs)
             score_df_filled = score_df.fillna(score_df.mean())
-            
+
             scaler = StandardScaler()
             scores_scaled = scaler.fit_transform(score_df_filled)
-            
+
             kmeans = KMeans(n_clusters=min(5, len(scores_scaled)), random_state=42, n_init=20)
             clusters = kmeans.fit_predict(scores_scaled)
-            
+
             stage_clusters[stage] = dict(zip(participant_nrs, clusters))
-    
+
     # Znajdź uczestników którzy są w >= 3 etapach
     participant_stages = {}
     for stage, clusters_dict in stage_clusters.items():
@@ -569,14 +708,14 @@ def visualize_cluster_evolution(analyzer, save_path='cluster_evolution.png'):
             if nr not in participant_stages:
                 participant_stages[nr] = []
             participant_stages[nr].append(stage)
-    
-    multi_stage_participants = {nr: stages for nr, stages in participant_stages.items() 
-                               if len(stages) >= 3}
-    
+
+    multi_stage_participants = {nr: stages for nr, stages in participant_stages.items()
+                                if len(stages) >= 3}
+
     if len(multi_stage_participants) == 0:
         print("Brak uczestników z >= 3 etapami do analizy ewolucji klastrów")
         return
-    
+
     # Przygotuj dane do wizualizacji
     evolution_data = []
     for nr, stages in multi_stage_participants.items():
@@ -587,48 +726,60 @@ def visualize_cluster_evolution(analyzer, save_path='cluster_evolution.png'):
             else:
                 row[stage] = np.nan
         evolution_data.append(row)
-    
+
     evolution_df = pd.DataFrame(evolution_data)
     evolution_df = evolution_df.dropna(thresh=3)  # Usuń jeśli < 3 etapy
-    
+
     if len(evolution_df) == 0:
         print("Brak danych do wizualizacji ewolucji")
         return
-    
+
     # Sortuj według klastra w finale
     if 'final' in evolution_df.columns:
         evolution_df = evolution_df.sort_values('final')
-    
-    # Wizualizacja
-    fig, ax = plt.subplots(figsize=(14, max(10, len(evolution_df) * 0.4)))
-    
-    # Twórz heatmapę klastrów
+
+    # Przygotuj dane do heatmapy
     stage_cols = [s for s in stage_order if s in evolution_df.columns]
-    heatmap_data = evolution_df[stage_cols].values
-    
-    im = ax.imshow(heatmap_data, cmap='Set1', aspect='auto', vmin=0, vmax=4)
-    
-    # Etykiety
-    ax.set_xticks(np.arange(len(stage_cols)))
-    ax.set_yticks(np.arange(len(evolution_df)))
-    ax.set_xticklabels(stage_cols)
-    ax.set_yticklabels([f"Uczestnik {nr}" for nr in evolution_df['Nr']])
-    
-    # Dodaj wartości w komórkach
-    for i in range(len(evolution_df)):
-        for j in range(len(stage_cols)):
-            value = heatmap_data[i, j]
-            if not np.isnan(value):
-                text = ax.text(j, i, int(value),
-                             ha="center", va="center", color="black", fontsize=10)
-    
+    heatmap_data = evolution_df[stage_cols].copy()
+    # heatmap_data.index = [f"Uczestnik {nr}" for nr in evolution_df['Nr']]
+    # Użyj imion i nazwisk zamiast numerów
+    heatmap_data.index = [
+        f"{participant_info[nr]['imie']} {participant_info[nr]['nazwisko']}"
+        if nr in participant_info
+        else f"Uczestnik {nr}"
+        for nr in evolution_df['Nr']
+    ]
+
+    colors = sns.color_palette("Set1", 5)
+    cmap = ListedColormap(colors)
+
+    # Wizualizacja z seaborn
+    fig, ax = plt.subplots(figsize=(14, max(10, len(evolution_df) * 0.4)))
+
+    # Użyj seaborn heatmap
+    sns.heatmap(
+        heatmap_data,
+        cmap=cmap,
+        annot=True,  # Pokazuj wartości w komórkach
+        fmt='.0f',  # Format liczb (bez miejsc po przecinku)
+        cbar_kws={'label': 'Numer klastra', 'ticks': [0, 1, 2, 3, 4]},
+        linewidths=0.5,
+        linecolor='gray',
+        vmin=0,
+        vmax=4,
+        ax=ax
+    )
+
+    # Etykiety i tytuł
     ax.set_title('Ewolucja przypisań do klastrów przez etapy\n' +
-                '(dla uczestników którzy przeszli przez 3+ etapów)',
-                fontsize=16, fontweight='bold', pad=20)
+                 '(dla uczestników którzy przeszli przez 3+ etapów)',
+                 fontsize=16, fontweight='bold', pad=20)
     ax.set_xlabel('Etap', fontsize=12)
     ax.set_ylabel('Uczestnik', fontsize=12)
-    
-    plt.colorbar(im, ax=ax, label='Numer klastra')
+
+    # Popraw etykiety osi X (nazwy etapów)
+    ax.set_xticklabels(stage_cols, rotation=0)
+
     plt.tight_layout()
     plt.savefig(save_path, dpi=300, bbox_inches='tight')
     plt.close()

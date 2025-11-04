@@ -137,7 +137,7 @@ class ChopinControversyAnalyzer:
         heatmap_data = []
         
         for idx, row in df.iterrows():
-            participant_label = f"{row['Nr']}: {row['nazwisko']}"
+            participant_label = f"{row['imię']}\n{row['nazwisko']}"
             participants.append(participant_label)
             
             # Zbierz oceny od wszystkich sędziów
