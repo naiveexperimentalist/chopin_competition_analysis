@@ -734,7 +734,7 @@ class ChopinVisualization:
         ax4.set_title('Podsumowanie: wszyscy dotknięci uczestnicy',
                       fontsize=12, fontweight='bold', pad=10)
 
-        plt.suptitle('Wpływ usunięcia sędziego na kwalifikacje do kolejnych rund',
+        plt.suptitle('Wpływ usunięcia sędziego na kwalifikacje do kolejnych etapów',
                      fontsize=15, fontweight='bold', y=0.995)
 
         if save_path:

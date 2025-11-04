@@ -104,7 +104,7 @@ def create_analysis_report(processor, analyzer, visualizer, output_dir='full_ana
                 f.write(f"- **{row['judge_removed']}**: usunięcie zmienia ranking średnio o {row['avg_rank_change']:.2f} pozycji\n")
         
         # 5.1 NOWA SEKCJA - Wpływ na kwalifikacje
-        f.write("\n### Wpływ usunięcia sędziego na kwalifikacje do kolejnych rund:\n\n")
+        f.write("\n### Wpływ usunięcia sędziego na kwalifikacje do kolejnych etapów:\n\n")
         qualification_impact = analyzer.analyze_qualification_after_judge_removal()
         
         if not qualification_impact.empty:
