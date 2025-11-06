@@ -492,7 +492,7 @@ def visualize_kmeans_clusters(results_df, cluster_stats_df, save_path='participa
     colors = sns.color_palette("husl", n_clusters)
     ax1.bar(cluster_counts.index, cluster_counts.values, color=colors)
     ax1.set_xlabel('Numer klastra', fontsize=12)
-    ax1.set_ylabel('Liczba uczestników', fontsize=12)
+    ax1.set_ylabel('Number of contestants', fontsize=12)
     ax1.set_title('Rozkład uczestników w klastrach', fontsize=14, fontweight='bold')
     ax1.grid(True, alpha=0.3)
     
@@ -581,8 +581,8 @@ def visualize_judge_clusters(results_df, save_path='judge_clusters.png'):
     ax2 = axes[1]
     cluster_counts = results_df['cluster'].value_counts().sort_index()
     ax2.bar(cluster_counts.index, cluster_counts.values, color=colors)
-    ax2.set_xlabel('Numer klastra', fontsize=12)
-    ax2.set_ylabel('Liczba sędziów', fontsize=12)
+    ax2.set_xlabel('Cluster number', fontsize=12)
+    ax2.set_ylabel('Number of judges', fontsize=12)
     ax2.set_title('Rozkład sędziów w klastrach', fontsize=14, fontweight='bold')
     ax2.grid(True, alpha=0.3)
     

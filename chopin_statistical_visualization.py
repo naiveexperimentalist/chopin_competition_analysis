@@ -51,15 +51,15 @@ class ChopinStatisticalVisualization:
         # Heatmapa
         sns.heatmap(heatmap_sorted, cmap='RdBu_r', center=0, 
                    annot=False, fmt='.1f',
-                   cbar_kws={'label': 'Odchylenie od średniej oceny uczestnika'},
+                   cbar_kws={'label': 'Deviation from contestant’s mean score'},
                    ax=ax, vmin=-5, vmax=5)
         
-        ax.set_title(f'Zróżnicowanie ocen uczestników - {stage}\n' + 
-                    'Odchylenia ocen sędziów od średniej dla każdego uczestnika\n' +
-                    '(im większe różnice, tym bardziej zróżnicowane opinie)',
+        ax.set_title(f'Variation in contestants’ scores - {stage}\n' +
+                    'Judges’ deviations from each contestant’s mean score\n' +
+                    '(greater differences indicate more divergent opinions)',
                     fontsize=16, fontweight='bold', pad=20)
         ax.set_xlabel('', fontsize=12)
-        ax.set_ylabel('Uczestnik', fontsize=12)
+        ax.set_ylabel('Contestant', fontsize=12)
         
         plt.tight_layout()
         
@@ -91,8 +91,8 @@ class ChopinStatisticalVisualization:
         ax1.set_yticks(range(len(top_controversial)))
         ax1.set_yticklabels([f"{row['imię']} {row['nazwisko']}" for _, row in top_controversial.iterrows()],
                            fontsize=9)
-        ax1.set_xlabel('Odchylenie standardowe ocen', fontsize=12)
-        ax1.set_title('Top 15 uczestników z najbardziej zróżnicowanymi ocenami\n(wysokie SD = duże różnice między sędziami)', 
+        ax1.set_xlabel('Standard deviation of scores', fontsize=12)
+        ax1.set_title('Top 15 contestants with the most varied scores\n(high SD = large differences among judges)',
                      fontsize=14, fontweight='bold')
         ax1.grid(True, alpha=0.3)
         
@@ -101,23 +101,23 @@ class ChopinStatisticalVisualization:
         scatter = ax2.scatter(controversy['mean'], controversy['range'],
                             s=controversy['std']*50, alpha=0.6,
                             c=controversy['std'], cmap='Reds')
-        ax2.set_xlabel('Średnia ocena', fontsize=12)
-        ax2.set_ylabel('Rozpiętość ocen (max - min)', fontsize=12)
-        ax2.set_title('Średnia vs Rozpiętość\n(wielkość = SD)', 
+        ax2.set_xlabel('Mean score', fontsize=12)
+        ax2.set_ylabel('Score range (max − min)', fontsize=12)
+        ax2.set_title('Mean vs range\n(size = SD)',
                      fontsize=14, fontweight='bold')
         ax2.grid(True, alpha=0.3)
-        plt.colorbar(scatter, ax=ax2, label='SD ocen')
+        plt.colorbar(scatter, ax=ax2, label='SD of scores')
         
         # 3. Rozkład kontrowersyjności
         ax3 = axes[1, 0]
         ax3.hist(controversy['std'], bins=30, edgecolor='black', alpha=0.7, color='coral')
         ax3.axvline(controversy['std'].mean(), color='red', linestyle='--', 
-                   linewidth=2, label=f'Średnia: {controversy["std"].mean():.2f}')
+                   linewidth=2, label=f'Mean: {controversy["std"].mean():.2f}')
         ax3.axvline(controversy['std'].median(), color='blue', linestyle='--',
-                   linewidth=2, label=f'Mediana: {controversy["std"].median():.2f}')
-        ax3.set_xlabel('Odchylenie standardowe ocen', fontsize=12)
-        ax3.set_ylabel('Liczba uczestników', fontsize=12)
-        ax3.set_title('Rozkład kontrowersyjności wszystkich uczestników',
+                   linewidth=2, label=f'Median: {controversy["std"].median():.2f}')
+        ax3.set_xlabel('Standard deviation of scores', fontsize=12)
+        ax3.set_ylabel('Number of contestants', fontsize=12)
+        ax3.set_title('Distribution of score controversiality among all contestants',
                      fontsize=14, fontweight='bold')
         ax3.legend()
         ax3.grid(True, alpha=0.3)
@@ -130,12 +130,12 @@ class ChopinStatisticalVisualization:
         ax4.set_yticks(range(len(top_cv)))
         ax4.set_yticklabels([f"{row['participant_name']}" for _, row in top_cv.iterrows()],
                            fontsize=9)
-        ax4.set_xlabel('Współczynnik zmienności (%)', fontsize=12)
-        ax4.set_title('Top 15 uczestników wg CV\n(relatywna zmienność)',
+        ax4.set_xlabel('Coefficient of variation (%)', fontsize=12)
+        ax4.set_title('Top 15 contestants by coefficient of variation\n(relative variability)',
                      fontsize=14, fontweight='bold')
         ax4.grid(True, alpha=0.3)
         
-        plt.suptitle('Analiza zróżnicowania ocen uczestników', 
+        plt.suptitle('Analysis of score variation among contestants',
                     fontsize=16, fontweight='bold', y=1.00)
         plt.tight_layout()
         
@@ -694,12 +694,21 @@ class ChopinStatisticalVisualization:
         
         # 2. Biplot PC1 vs PC2
         ax2 = axes[0, 1]
-        ax2.scatter(pca_df['PC1'], pca_df['PC2'], s=100, alpha=0.6, c='coral')
-        
+        ax2.scatter(pca_df['PC1'], pca_df['PC2'], s=100, alpha=0.9, c='coral')
+
         for _, row in pca_df.iterrows():
-            ax2.annotate(row['judge'].split()[-1], 
-                        (row['PC1'], row['PC2']),
-                        fontsize=9, alpha=0.7)
+            x_offset = 0.0
+            y_offset = 0.5
+            if row['judge'] in ['Garrick Ohlsson', 'Robert McDonald']:
+                y_offset = -0.6
+                if row['judge'] == 'Robert McDonald':
+                    x_offset = 0.6
+                else:
+                    x_offset = -0.8
+            ax2.annotate(row['judge'].split()[-1],
+                         (row['PC1'] + x_offset, row['PC2'] + y_offset),
+                         fontsize=9, alpha=0.75, ha='center', va='center',
+                         bbox=dict(boxstyle='round,pad=0.3', facecolor='yellow', alpha=0.3))
         
         ax2.axhline(y=0, color='gray', linestyle='--', alpha=0.5)
         ax2.axvline(x=0, color='gray', linestyle='--', alpha=0.5)
@@ -712,12 +721,20 @@ class ChopinStatisticalVisualization:
         # 3. PC1 vs PC3 (jeśli istnieje)
         ax3 = axes[1, 0]
         if 'PC3' in pca_df.columns:
-            ax3.scatter(pca_df['PC1'], pca_df['PC3'], s=100, alpha=0.6, c='lightgreen')
-            
+            ax3.scatter(pca_df['PC1'], pca_df['PC3'], s=100, alpha=0.9, c='green')
+
             for _, row in pca_df.iterrows():
+                x_offset = 0.0
+                y_offset = -0.7
+                if row['judge'] in ['K. Popowa-Zydroń', 'Nelson Goerner', 'Momo Kodama', 'Dang Thai Son', 'Garrick Ohlsson']:
+                    y_offset = 0.6
+                elif row['judge'] in ['Robert McDonald']:
+                    x_offset = 1.0
+                    y_offset = 0.5
                 ax3.annotate(row['judge'].split()[-1],
-                            (row['PC1'], row['PC3']),
-                            fontsize=9, alpha=0.7)
+                             (row['PC1'] + x_offset, row['PC3'] + y_offset),
+                             fontsize=9, alpha=0.75, ha='center', va='center',
+                             bbox=dict(boxstyle='round,pad=0.3', facecolor='yellow', alpha=0.3))
             
             ax3.axhline(y=0, color='gray', linestyle='--', alpha=0.5)
             ax3.axvline(x=0, color='gray', linestyle='--', alpha=0.5)

@@ -56,9 +56,9 @@ class ChopinVisualization:
         # Violin plot
         ax1 = axes[0]
         sns.violinplot(data=scores_df, x='Judge', y='Score', ax=ax1, inner='box')
-        ax1.set_title(f'Rozkład ocen sędziów - {stage}', fontsize=16, fontweight='bold')
+        ax1.set_title(f'Distribution of scores by judge — {stage}', fontsize=16, fontweight='bold')
         ax1.set_xlabel('', fontsize=12)
-        ax1.set_ylabel('Ocena', fontsize=12)
+        ax1.set_ylabel('Score', fontsize=12)
         ax1.tick_params(axis='x', rotation=45)
         ax1.grid(True, alpha=0.3)
         
@@ -67,9 +67,9 @@ class ChopinVisualization:
         sns.boxplot(data=scores_df, x='Judge', y='Score', ax=ax2)
         sns.stripplot(data=scores_df, x='Judge', y='Score', ax=ax2,
                      alpha=0.4, size=3, color='red')
-        ax2.set_title(f'Box plot z punktami - {stage}', fontsize=16, fontweight='bold')
+        ax2.set_title(f'Box-and-whisker plot with data points (jittered) — {stage}', fontsize=16, fontweight='bold')
         ax2.set_xlabel('', fontsize=12)
-        ax2.set_ylabel('Ocena', fontsize=12)
+        ax2.set_ylabel('Score', fontsize=12)
         ax2.tick_params(axis='x', rotation=45)
         ax2.grid(True, alpha=0.3)
         
@@ -96,8 +96,8 @@ class ChopinVisualization:
         scale_usage_sorted = scale_usage.sort_values('overall_range', ascending=True)
         colors = plt.cm.RdYlGn(np.linspace(0.2, 0.8, len(scale_usage_sorted)))
         bars1 = ax1.barh(scale_usage_sorted['judge'], scale_usage_sorted['overall_range'], color=colors)
-        ax1.set_xlabel('Rozpiętość ocen (max - min)', fontsize=12)
-        ax1.set_title('Rozpiętość stosowanych ocen przez sędziów', fontsize=14, fontweight='bold')
+        ax1.set_xlabel('Score range (max − min)', fontsize=12)
+        ax1.set_title('Range of assigned scores per judge', fontsize=14, fontweight='bold')
         ax1.grid(True, alpha=0.3)
         
         # Dodaj wartości na słupkach
@@ -110,8 +110,8 @@ class ChopinVisualization:
         scale_usage_sorted2 = scale_usage.sort_values('scale_coverage', ascending=True)
         colors2 = plt.cm.viridis(np.linspace(0.3, 0.9, len(scale_usage_sorted2)))
         bars2 = ax2.barh(scale_usage_sorted2['judge'], scale_usage_sorted2['scale_coverage'], color=colors2)
-        ax2.set_xlabel('Procent wykorzystania skali 1-25 (%)', fontsize=12)
-        ax2.set_title('Procent unikalnych ocen z możliwych 25', fontsize=14, fontweight='bold')
+        ax2.set_xlabel('Percentage of scale usage (1–25)', fontsize=12)
+        ax2.set_title('Percentage of unique score values used (of 25)', fontsize=14, fontweight='bold')
         ax2.grid(True, alpha=0.3)
         
         for bar, val in zip(bars2, scale_usage_sorted2['scale_coverage']):
@@ -129,9 +129,9 @@ class ChopinVisualization:
                         (row['overall_mean'], row['overall_std']),
                         fontsize=8, alpha=0.7)
         
-        ax3.set_xlabel('Średnia ocena', fontsize=12)
-        ax3.set_ylabel('Odchylenie standardowe', fontsize=12)
-        ax3.set_title('Średnia vs. Zmienność ocen (wielkość = rozpiętość)', fontsize=14, fontweight='bold')
+        ax3.set_xlabel('Mean score', fontsize=12)
+        ax3.set_ylabel('Standard deviation', fontsize=12)
+        ax3.set_title('Mean vs. variability of scores (size = range)', fontsize=14, fontweight='bold')
         ax3.grid(True, alpha=0.3)
         
         # 4. Heatmapa entropii przez etapy
@@ -142,12 +142,12 @@ class ChopinVisualization:
             entropy_data.columns = [col.replace('_entropy', '') for col in entropy_data.columns]
             
             sns.heatmap(entropy_data.T, annot=True, fmt='.2f', cmap='YlOrRd', ax=ax4, 
-                       cbar_kws={'label': 'Entropia'})
-            ax4.set_title('Entropia ocen (różnorodność) przez etapy', fontsize=14, fontweight='bold')
+                       cbar_kws={'label': 'Entropy'})
+            ax4.set_title('Score entropy (diversity) by stage', fontsize=14, fontweight='bold')
             ax4.set_xlabel('', fontsize=12)
-            ax4.set_ylabel('Etap', fontsize=12)
+            ax4.set_ylabel('', fontsize=12)
         
-        plt.suptitle('Analiza wykorzystania skali 1-25 przez sędziów', fontsize=16, fontweight='bold', y=1.02)
+        plt.suptitle('Use of the 1–25 scale by judges', fontsize=16, fontweight='bold', y=1.02)
         plt.tight_layout()
         
         if save_path:
@@ -172,8 +172,8 @@ class ChopinVisualization:
         colors = ['red' if x < 0 else 'green' for x in tendencies_sorted['overall_harshness']]
         bars = ax1.barh(tendencies_sorted['judge'], tendencies_sorted['overall_harshness'], color=colors)
         ax1.axvline(x=0, color='black', linestyle='-', linewidth=0.5)
-        ax1.set_xlabel('Średnia różnica od konsensusu', fontsize=12)
-        ax1.set_title('Surowość sędziów (ujemne = surowi, dodatnie = łagodni)', fontsize=14, fontweight='bold')
+        ax1.set_xlabel('Mean difference from the consensus', fontsize=12)
+        ax1.set_title('Judge harshness (negative = harsher, positive = more lenient)', fontsize=14, fontweight='bold')
         ax1.grid(True, alpha=0.3)
         
         # 2. Konsystencja oceniania
@@ -181,8 +181,8 @@ class ChopinVisualization:
         tendencies_sorted2 = tendencies.sort_values('overall_consistency', ascending=False)
         bars2 = ax2.barh(tendencies_sorted2['judge'], tendencies_sorted2['overall_consistency'], 
                         color=plt.cm.plasma(np.linspace(0.2, 0.8, len(tendencies_sorted2))))
-        ax2.set_xlabel('Odchylenie standardowe od średniej', fontsize=12)
-        ax2.set_title('Zmienność oceniania (wyższe = bardziej zmienny)', fontsize=14, fontweight='bold')
+        ax2.set_xlabel('Standard deviation of scores', fontsize=12)
+        ax2.set_title('Scoring variability (higher = more variable)', fontsize=14, fontweight='bold')
         ax2.grid(True, alpha=0.3)
         
         # 3. Korelacja z konsensusem
@@ -191,8 +191,8 @@ class ChopinVisualization:
         colors3 = plt.cm.RdYlGn(tendencies_sorted3['consensus_correlation'])
         bars3 = ax3.barh(tendencies_sorted3['judge'], tendencies_sorted3['consensus_correlation'], 
                         color=colors3)
-        ax3.set_xlabel('Korelacja z konsensusem', fontsize=12)
-        ax3.set_title('Zgodność z innymi sędziami', fontsize=14, fontweight='bold')
+        ax3.set_xlabel('Correlation with the consensus', fontsize=12)
+        ax3.set_title('Agreement with other judges', fontsize=14, fontweight='bold')
         ax3.set_xlim([0, 1])
         ax3.grid(True, alpha=0.3)
         
@@ -210,25 +210,25 @@ class ChopinVisualization:
         
         ax4.axvline(x=0, color='gray', linestyle='--', alpha=0.5)
         ax4.axhline(y=tendencies['overall_consistency'].mean(), color='gray', linestyle='--', alpha=0.5)
-        ax4.set_xlabel('Surowość (różnica od średniej)', fontsize=12)
-        ax4.set_ylabel('Zmienność oceniania', fontsize=12)
-        ax4.set_title('Mapa tendencji sędziowskich (wielkość = zgodność z konsensusem)', 
+        ax4.set_xlabel('Harshness (difference from the consensus mean)', fontsize=12)
+        ax4.set_ylabel('Scoring variability', fontsize=12)
+        ax4.set_title('Judge tendency map (size = agreement with the consensus)',
                      fontsize=14, fontweight='bold')
         ax4.grid(True, alpha=0.3)
         
         # Dodaj legendę kwadrantów
         bbox_style = dict(boxstyle='round,pad=0.5', facecolor='peachpuff',
                           edgecolor='darkorange', alpha=0.8, linewidth=1.5)
-        ax4.text(0.07, 0.93, 'Surowi\nKonsystentni', transform=ax4.transAxes,
+        ax4.text(0.07, 0.93, 'Harsh\nStable', transform=ax4.transAxes,
                 fontsize=9, va='top', alpha=1, bbox=bbox_style)
-        ax4.text(0.93, 0.93, 'Łagodni\nKonsystentni', transform=ax4.transAxes,
+        ax4.text(0.93, 0.93, 'Lenient\nStable', transform=ax4.transAxes,
                 fontsize=9, va='top', ha='right', alpha=1, bbox=bbox_style)
-        ax4.text(0.07, 0.07, 'Surowi\nZmienni', transform=ax4.transAxes,
+        ax4.text(0.07, 0.07, 'Harsh\nVariable', transform=ax4.transAxes,
                 fontsize=9, alpha=1, bbox=bbox_style)
-        ax4.text(0.93, 0.07, 'Łagodni\nZmienni', transform=ax4.transAxes,
+        ax4.text(0.93, 0.07, 'Lenient\nVariable', transform=ax4.transAxes,
                 fontsize=9, ha='right', alpha=1, bbox=bbox_style)
         
-        plt.suptitle('Analiza tendencji sędziowskich', fontsize=16, fontweight='bold', y=1.02)
+        plt.suptitle('Judge tendency analysis', fontsize=16, fontweight='bold', y=1.02)
         plt.tight_layout()
         
         if save_path:
@@ -264,8 +264,8 @@ class ChopinVisualization:
         mask = np.triu(np.ones_like(correlation_matrix, dtype=bool))
         sns.heatmap(correlation_matrix, mask=mask, annot=True, fmt='.2f',
                     cmap='coolwarm', center=0.5, vmin=0, vmax=1,
-                    square=True, ax=ax1, cbar_kws={'label': 'Korelacja'})
-        ax1.set_title('Macierz korelacji ocen między sędziami', fontsize=14, fontweight='bold')
+                    square=True, ax=ax1, cbar_kws={'label': 'Correlation'})
+        ax1.set_title('Judge–to–judge score correlation matrix', fontsize=14, fontweight='bold')
 
         # 2. Dendrogram - hierarchiczne grupowanie
         if len(correlation_matrix) > 1:
@@ -283,8 +283,8 @@ class ChopinVisualization:
             linkage_matrix = linkage(condensed_distances, method='ward')
             dendrogram(linkage_matrix, labels=correlation_matrix.index.tolist(),
                        ax=ax2, orientation='right')
-            ax2.set_title('Dendrogram - grupowanie sędziów', fontsize=14, fontweight='bold')
-            ax2.set_xlabel('Odległość')
+            ax2.set_title('Dendrogram — judge clustering', fontsize=14, fontweight='bold')
+            ax2.set_xlabel('Distance')
 
         # 3 i 4. Network graph i tabela - tylko jeśli są sojusze
         if has_alliances:
@@ -343,7 +343,7 @@ class ChopinVisualization:
                 ])
 
             table = ax4.table(cellText=table_data,
-                              colLabels=['Sędzia 1', 'Sędzia 2', 'Korelacja', 'Siła'],
+                              colLabels=['Judge 1', 'Judge 2', 'Correlation', 'Siła'],
                               cellLoc='center',
                               loc='center',
                               colWidths=[0.25, 0.25, 0.25, 0.25])
@@ -360,137 +360,13 @@ class ChopinVisualization:
 
             ax4.set_title('Top 10 sojuszy sędziowskich', fontsize=14, fontweight='bold', pad=20)
 
-        plt.suptitle('Analiza korelacji i sojuszy między sędziami', fontsize=16, fontweight='bold', y=1.02)
+        plt.suptitle('Correlation and clustering analysis of judges', fontsize=16, fontweight='bold', y=1.02)
         plt.tight_layout()
 
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches='tight')
         plt.close()
 
-    def visualize_judge_alliances_old(self, save_path: str = None):
-        """
-        Wizualizuje korelacje i potencjalne sojusze między sędziami
-        """
-        if not self.analyzer:
-            print("Brak obiektu analyzer. Uruchom najpierw advanced_analyzer.")
-            return
-        
-        correlation_matrix, alliances = self.analyzer.analyze_judge_alliances(threshold=0.6)
-        
-        fig, axes = plt.subplots(2, 2, figsize=(18, 16))
-        
-        # 1. Heatmapa korelacji
-        ax1 = axes[0, 0]
-        mask = np.triu(np.ones_like(correlation_matrix, dtype=bool))
-        sns.heatmap(correlation_matrix, mask=mask, annot=True, fmt='.2f', 
-                   cmap='coolwarm', center=0.5, vmin=0, vmax=1,
-                   square=True, ax=ax1, cbar_kws={'label': 'Korelacja'})
-        ax1.set_title('Macierz korelacji ocen między sędziami', fontsize=14, fontweight='bold')
-        
-        # 2. Dendrogram - hierarchiczne grupowanie
-        ax2 = axes[0, 1]
-        if len(correlation_matrix) > 1:
-            # Przekształć korelację na odległość
-            distance_matrix = 1 - correlation_matrix.fillna(0)
-            np.fill_diagonal(distance_matrix.values, 0)
-            
-            # Upewnij się, że macierz jest symetryczna
-            distance_matrix = (distance_matrix + distance_matrix.T) / 2
-            
-            # Konwertuj do condensed form
-            condensed_distances = squareform(distance_matrix)
-            
-            # Twórz dendrogram
-            linkage_matrix = linkage(condensed_distances, method='ward')
-            dendrogram(linkage_matrix, labels=correlation_matrix.index.tolist(), 
-                      ax=ax2, orientation='right')
-            ax2.set_title('Dendrogram - grupowanie sędziów', fontsize=14, fontweight='bold')
-            ax2.set_xlabel('Odległość')
-        
-        # 3. Network graph sojuszy
-        ax3 = axes[1, 0]
-        if not alliances.empty:
-            # Przygotuj dane do grafu
-            strong_alliances = alliances[alliances['correlation'] > 0.7]
-            
-            # Prosty wykres sieciowy
-            ax3.set_title('Silne sojusze sędziowskie (korelacja > 0.7)', fontsize=14, fontweight='bold')
-            
-            # Utwórz pozycje węzłów w okręgu
-            n_judges = len(self.judge_columns)
-            angles = np.linspace(0, 2*np.pi, n_judges, endpoint=False)
-            x = np.cos(angles)
-            y = np.sin(angles)
-            
-            # Rysuj węzły
-            ax3.scatter(x, y, s=500, c='lightblue', edgecolors='navy', linewidth=2, alpha=0.7)
-            
-            # Dodaj etykiety
-            for i, judge in enumerate(self.judge_columns):
-                ax3.annotate(judge.split()[-1], (x[i]*1.15, y[i]*1.15), 
-                           ha='center', va='center', fontsize=9)
-            
-            # Rysuj krawędzie dla silnych sojuszy
-            judge_positions = {judge: (x[i], y[i]) for i, judge in enumerate(self.judge_columns)}
-            
-            for _, alliance in strong_alliances.iterrows():
-                if alliance['judge1'] in judge_positions and alliance['judge2'] in judge_positions:
-                    pos1 = judge_positions[alliance['judge1']]
-                    pos2 = judge_positions[alliance['judge2']]
-                    
-                    # Grubość linii proporcjonalna do siły korelacji
-                    linewidth = (alliance['correlation'] - 0.7) * 10
-                    alpha = alliance['correlation']
-                    
-                    ax3.plot([pos1[0], pos2[0]], [pos1[1], pos2[1]], 
-                           'r-', linewidth=linewidth, alpha=alpha)
-            
-            ax3.set_xlim([-1.5, 1.5])
-            ax3.set_ylim([-1.5, 1.5])
-            ax3.set_aspect('equal')
-            ax3.axis('off')
-        
-        # 4. Top sojusze - tabela
-        ax4 = axes[1, 1]
-        ax4.axis('tight')
-        ax4.axis('off')
-        
-        if not alliances.empty:
-            top_alliances = alliances.head(10)
-            table_data = []
-            for _, row in top_alliances.iterrows():
-                table_data.append([
-                    row['judge1'].split()[-1],
-                    row['judge2'].split()[-1],
-                    f"{row['correlation']:.3f}",
-                    row['strength']
-                ])
-            
-            table = ax4.table(cellText=table_data,
-                            colLabels=['Sędzia 1', 'Sędzia 2', 'Korelacja', 'Siła'],
-                            cellLoc='center',
-                            loc='center',
-                            colWidths=[0.25, 0.25, 0.25, 0.25])
-            table.auto_set_font_size(False)
-            table.set_fontsize(10)
-            table.scale(1, 2)
-            
-            # Koloruj komórki według siły
-            for i, row in enumerate(top_alliances.itertuples()):
-                if row.strength == 'strong':
-                    table[(i+1, 3)].set_facecolor('#90EE90')
-                else:
-                    table[(i+1, 3)].set_facecolor('#FFE4B5')
-        
-        ax4.set_title('Top 10 sojuszy sędziowskich', fontsize=14, fontweight='bold', pad=20)
-        
-        plt.suptitle('Analiza korelacji i sojuszy między sędziami', fontsize=16, fontweight='bold', y=1.02)
-        plt.tight_layout()
-        
-        if save_path:
-            plt.savefig(save_path, dpi=300, bbox_inches='tight')
-        plt.close()
-    
     def visualize_judge_removal_impact(self, save_path: str = None):
         """
         Wizualizuje wpływ usunięcia każdego sędziego na wyniki
@@ -513,8 +389,8 @@ class ChopinVisualization:
         colors1 = plt.cm.Reds(np.linspace(0.3, 0.9, len(removal_sorted)))
         bars1 = ax1.barh(removal_sorted['judge_removed'], removal_sorted['avg_rank_change'], 
                         color=colors1)
-        ax1.set_xlabel('Średnia zmiana pozycji w rankingu', fontsize=12)
-        ax1.set_title('Wpływ usunięcia sędziego - średnia zmiana', fontsize=14, fontweight='bold')
+        ax1.set_xlabel('Average change in rank', fontsize=12)
+        ax1.set_title('Average change in rank when a judge is removed', fontsize=14, fontweight='bold')
         ax1.grid(True, alpha=0.3)
         
         # 2. Maksymalna zmiana rankingu
@@ -523,8 +399,8 @@ class ChopinVisualization:
         colors2 = plt.cm.Oranges(np.linspace(0.3, 0.9, len(removal_sorted2)))
         bars2 = ax2.barh(removal_sorted2['judge_removed'], removal_sorted2['max_rank_change'], 
                         color=colors2)
-        ax2.set_xlabel('Maksymalna zmiana pozycji', fontsize=12)
-        ax2.set_title('Największy wpływ na pojedynczego uczestnika', fontsize=14, fontweight='bold')
+        ax2.set_xlabel('Maximum change in rank', fontsize=12)
+        ax2.set_title('Largest impact on a single contestant', fontsize=14, fontweight='bold')
         ax2.grid(True, alpha=0.3)
         
         # 3. Liczba uczestników dotkniętych zmianą
@@ -533,8 +409,8 @@ class ChopinVisualization:
         colors3 = plt.cm.Purples(np.linspace(0.3, 0.9, len(removal_sorted3)))
         bars3 = ax3.barh(removal_sorted3['judge_removed'], removal_sorted3['participants_affected'], 
                         color=colors3)
-        ax3.set_xlabel('Liczba uczestników ze zmienioną pozycją', fontsize=12)
-        ax3.set_title('Liczba dotkniętych uczestników', fontsize=14, fontweight='bold')
+        ax3.set_xlabel('Number of contestants who changed rank', fontsize=12)
+        ax3.set_title('Number of contestants affected', fontsize=14, fontweight='bold')
         ax3.grid(True, alpha=0.3)
         
         # 4. Wpływ na top 10
@@ -544,11 +420,11 @@ class ChopinVisualization:
                   for x in removal_sorted4['top10_changes']]
         bars4 = ax4.barh(removal_sorted4['judge_removed'], removal_sorted4['top10_changes'], 
                         color=colors4)
-        ax4.set_xlabel('Liczba zmian wśród finalistów ', fontsize=12)
-        ax4.set_title('Wpływ na czołówkę konkursu', fontsize=14, fontweight='bold')
+        ax4.set_xlabel('Number of changes among finalists', fontsize=12)
+        ax4.set_title('Impact on the leading group', fontsize=14, fontweight='bold')
         ax4.grid(True, alpha=0.3)
         
-        plt.suptitle('Symulacja wpływu usunięcia sędziego na wyniki konkursu', 
+        plt.suptitle('Leave–one–judge–out simulation: impact on results',
                     fontsize=16, fontweight='bold', y=1.02)
         plt.tight_layout()
         
@@ -647,10 +523,10 @@ class ChopinVisualization:
                     table[(i, j)].set_facecolor('#ffffff')
 
         # Tytuł nad tabelą
-        ax_table.text(0.5, 0.94, 'Szczegółowy wpływ: uczestnicy dotknięci usunięciem sędziego',
+        ax_table.text(0.5, 0.94, 'Detailed impact: contestants affected by removing a judge',
                       ha='center', va='top', transform=ax_table.transAxes,
                       fontsize=13, fontweight='bold', clip_on=False)
-        ax_table.text(0.5, 0.90, '(↓ = odpadłby, ↑ = awansowałby)',
+        ax_table.text(0.5, 0.90, '(↓ = would be eliminated, ↑ = would advance)',
                       ha='center', va='top', transform=ax_table.transAxes,
                       fontsize=10, style='italic', color='#555')
 
@@ -671,8 +547,8 @@ class ChopinVisualization:
 
         colors = plt.cm.RdYlGn_r(np.linspace(0.2, 0.8, len(total_sorted)))
         ax3.barh(total_sorted.index, total_sorted.values, color=colors, edgecolor='black', linewidth=0.5)
-        ax3.set_xlabel('Łączna liczba zmian w kwalifikacjach', fontsize=11, fontweight='bold')
-        ax3.set_title('Całkowity wpływ usunięcia sędziego',
+        ax3.set_xlabel('Total number of qualification changes', fontsize=11, fontweight='bold')
+        ax3.set_title('Overall impact of removing a judge',
                       fontsize=12, fontweight='bold', pad=10)
         ax3.grid(True, alpha=0.3, axis='x')
 
@@ -706,7 +582,7 @@ class ChopinVisualization:
                                      key=lambda x: (-(x[1]['up'] + x[1]['down']), x[0]))
 
         # Utwórz tekst do wyświetlenia
-        text_content = "Wszyscy uczestnicy dotknięci usunięciem\njakiegokolwiek sędziego:\n"
+        text_content = "All contestants affected by the removal\nof any judge\n"
         text_content += "=" * 42 + "\n\n"
 
         for name, counts in sorted_participants:
@@ -731,10 +607,10 @@ class ChopinVisualization:
                  fontfamily='monospace',
                  bbox=dict(boxstyle='round', facecolor='#f0f0f0', alpha=0.8, pad=1))
 
-        ax4.set_title('Podsumowanie: wszyscy dotknięci uczestnicy',
+        ax4.set_title('Summary: all affected contestants',
                       fontsize=12, fontweight='bold', pad=10)
 
-        plt.suptitle('Wpływ usunięcia sędziego na kwalifikacje do kolejnych etapów',
+        plt.suptitle('Impact of removing a judge on stage qualifications',
                      fontsize=15, fontweight='bold', y=0.995)
 
         if save_path:
@@ -773,7 +649,7 @@ class ChopinVisualization:
         axes = axes.flatten()
 
         # Kolory tła na przemian
-        bg_colors = ['#dddddd', '#eeeeee']
+        bg_colors = ['#FFEFD5', '#FFFFC2']
 
         # Dla każdego sędziego stwórz subplot z tabelą
         for idx, judge in enumerate(judges):
@@ -799,7 +675,7 @@ class ChopinVisualization:
             plot_data = plot_data.sort_values('sort_key')
 
             # Tytuł - wyżej
-            ax.text(0.5, 0.96, f'Bez: {judge}',
+            ax.text(0.5, 0.96, f'Without {judge}',
                     ha='center', va='top', fontsize=11, fontweight='bold',
                     transform=ax.transAxes)
 
@@ -956,178 +832,10 @@ class ChopinVisualization:
         #                    fontsize=10, transform=legend_ax.transAxes)
 
         # Tytuł główny
-        fig.suptitle('Ranking końcowy finalistów w scenariuszach usunięcia poszczególnych sędziów',
+        fig.suptitle('Finalists’ placements under leave-one-judge-out scenarios',
                      fontsize=16, fontweight='bold', y=0.995)
 
-        plt.tight_layout(rect=[0, 0, 1, 0.99])
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
-        print(f"✓ Zapisano wizualizację do: {save_path}")
-        plt.close()
-
-    def visualize_final_results_impact_after_removing_judge_old(self, save_path: str = None):
-        """
-        Wizualizuje ranking końcowy dla wszystkich 11 finalistów jako posortowane listy tekstowe.
-        Tworzy siatkę 17 subplotów (jeden dla każdego sędziego).
-
-        Args:
-            save_path: ścieżka do zapisu pliku (jeśli None, użyje domyślnej)
-        """
-        import matplotlib.pyplot as plt
-        import matplotlib.patches as mpatches
-        import numpy as np
-        import pandas as pd
-
-        results_df = self.analyzer.generate_results_after_judge_removal()
-
-        # Pobierz listę sędziów
-        judges = [col.replace('_change', '') for col in results_df.columns if col.endswith('_change')]
-
-        # Przygotuj figurę z subplotami - siatka 4x5 (17 sędziów + 1 pusty dla legendy)
-        n_judges = len(judges)
-        n_cols = 5
-        n_rows = (n_judges + n_cols - 1) // n_cols
-
-        fig, axes = plt.subplots(n_rows, n_cols, figsize=(24, 5.5 * n_rows))
-        axes = axes.flatten()
-
-        # Dla każdego sędziego stwórz subplot z listą
-        for idx, judge in enumerate(judges):
-            ax = axes[idx]
-            ax.axis('off')  # wyłącz osie
-
-            rank_col = f"{judge}_rank"
-            change_col = f"{judge}_change"
-
-            # Przygotuj dane dla tego sędziego
-            plot_data = results_df[['Nr', 'imię', 'nazwisko', 'original_rank', rank_col, change_col]].copy()
-
-            # Posortuj według nowego rankingu (n/a na końcu)
-            plot_data['sort_key'] = plot_data[rank_col].apply(lambda x: 999 if x == 'n/a' else int(x))
-            plot_data = plot_data.sort_values('sort_key')
-
-            # Tytuł
-            ax.text(0.5, 0.98, f'Bez: {judge}',
-                    ha='center', va='top', fontsize=11, fontweight='bold',
-                    transform=ax.transAxes)
-
-            # Rysuj listę
-            y_start = 0.92
-            line_height = 0.08
-
-            for i, (_, row) in enumerate(plot_data.iterrows()):
-                y_pos = y_start - i * line_height
-
-                # Bazowa informacja
-                participant_info = f"{row['Nr']}. {row['imię']} {row['nazwisko']}"
-
-                if row[rank_col] == 'n/a':
-                    # Dyskwalifikacja - skreślone (używamy koloru szarego i przekreślenia)
-                    rank_text = "—"
-                    color = 'darkgray'
-
-                    # Rysuj tekst
-                    ax.text(0.02, y_pos, rank_text, ha='left', va='center',
-                            fontsize=9, color=color, fontweight='bold',
-                            transform=ax.transAxes)
-
-                    # Skreślony tekst uczestnika
-                    text_obj = ax.text(0.10, y_pos, participant_info, ha='left', va='center',
-                                       fontsize=9, color=color, style='italic',
-                                       transform=ax.transAxes)
-
-                    # Dodaj linię przez tekst (skreślenie)
-                    ax.plot([0.10, 0.90], [y_pos, y_pos], 'k-', linewidth=0.8,
-                            alpha=0.4, transform=ax.transAxes)
-
-                else:
-                    new_rank = int(row[rank_col])
-                    orig_rank = int(row['original_rank'])
-
-                    # Ustal zmianę i symbol
-                    if row[change_col] == 'n/a':
-                        change_symbol = ""
-                        color = 'darkgray'
-                    else:
-                        change = int(row[change_col])
-
-                        if change > 0:  # Poprawa (było niżej, teraz wyżej)
-                            change_symbol = f"↑ z {orig_rank}."
-                            color = 'forestgreen'
-                        elif change < 0:  # Pogorszenie
-                            change_symbol = f"↓ z {orig_rank}."
-                            color = 'firebrick'
-                        else:  # Bez zmian
-                            change_symbol = "—"
-                            color = 'steelblue'
-
-                    # Rysuj ranking
-                    ax.text(0.02, y_pos, f"{new_rank}.", ha='left', va='center',
-                            fontsize=9, color='black', fontweight='bold',
-                            transform=ax.transAxes)
-
-                    # Rysuj uczestnika
-                    ax.text(0.10, y_pos, participant_info, ha='left', va='center',
-                            fontsize=9, color='black',
-                            transform=ax.transAxes)
-
-                    # Rysuj zmianę
-                    ax.text(0.95, y_pos, change_symbol, ha='right', va='center',
-                            fontsize=8, color=color, fontweight='bold',
-                            transform=ax.transAxes)
-
-            # Ramka wokół
-            rect = mpatches.Rectangle((0.01, 0.02), 0.98, 0.96,
-                                      linewidth=1, edgecolor='gray',
-                                      facecolor='none', transform=ax.transAxes)
-            ax.add_patch(rect)
-
-        # Ukryj pozostałe puste subploty
-        for idx in range(n_judges, len(axes)):
-            axes[idx].axis('off')
-
-        # Dodaj legendę na ostatnim pustym subplot
-        if n_judges < len(axes):
-            legend_ax = axes[-1]
-            legend_ax.axis('off')
-
-            # Tekst legendy
-            legend_y = 0.7
-            legend_ax.text(0.5, legend_y, 'Legenda:', ha='center', va='top',
-                           fontsize=12, fontweight='bold', transform=legend_ax.transAxes)
-
-            legend_y -= 0.1
-            legend_ax.text(0.1, legend_y, '—', ha='left', va='center',
-                           fontsize=10, color='steelblue', fontweight='bold',
-                           transform=legend_ax.transAxes)
-            legend_ax.text(0.2, legend_y, 'Bez zmian', ha='left', va='center',
-                           fontsize=10, transform=legend_ax.transAxes)
-
-            legend_y -= 0.08
-            legend_ax.text(0.1, legend_y, '↑ z X.', ha='left', va='center',
-                           fontsize=10, color='forestgreen', fontweight='bold',
-                           transform=legend_ax.transAxes)
-            legend_ax.text(0.2, legend_y, 'Awans (z pozycji X)', ha='left', va='center',
-                           fontsize=10, transform=legend_ax.transAxes)
-
-            legend_y -= 0.08
-            legend_ax.text(0.1, legend_y, '↓ z X.', ha='left', va='center',
-                           fontsize=10, color='firebrick', fontweight='bold',
-                           transform=legend_ax.transAxes)
-            legend_ax.text(0.2, legend_y, 'Spadek (z pozycji X)', ha='left', va='center',
-                           fontsize=10, transform=legend_ax.transAxes)
-
-            legend_y -= 0.08
-            legend_ax.text(0.1, legend_y, '~~tekst~~', ha='left', va='center',
-                           fontsize=10, color='darkgray', style='italic',
-                           transform=legend_ax.transAxes)
-            legend_ax.text(0.2, legend_y, 'Poza finałem (n/a)', ha='left', va='center',
-                           fontsize=10, transform=legend_ax.transAxes)
-
-        # Tytuł główny
-        fig.suptitle('Ranking końcowy finalistów w scenariuszach usunięcia poszczególnych sędziów',
-                     fontsize=16, fontweight='bold', y=0.995)
-
-        plt.tight_layout(rect=[0, 0, 1, 0.99])
+        plt.tight_layout(rect=(0, 0, 1, 0.99))
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
         print(f"✓ Zapisano wizualizację do: {save_path}")
         plt.close()
@@ -1195,8 +903,8 @@ class ChopinVisualization:
             offset = (i - len(self.judge_columns)/2) * width
             ax2.bar(x + offset, judge_scores[judge], width, label=judge.split()[-1], alpha=0.7)
         
-        ax2.set_xlabel('Etap', fontsize=12)
-        ax2.set_ylabel('Ocena', fontsize=12)
+        ax2.set_xlabel('Stage', fontsize=12)
+        ax2.set_ylabel('Score', fontsize=12)
         ax2.set_title('Oceny od poszczególnych sędziów', fontsize=14, fontweight='bold')
         ax2.set_xticks(x)
         ax2.set_xticklabels(stage_labels)
@@ -1302,12 +1010,12 @@ class ChopinVisualization:
         favs = [fav_counts.get(j, 0) for j in judges_all]
         unfavs = [unfav_counts.get(j, 0) for j in judges_all]
         
-        bars1 = ax1.bar(x - width/2, favs, width, label='Faworyci', color='green', alpha=0.7)
-        bars2 = ax1.bar(x + width/2, unfavs, width, label='Niefaworyci', color='red', alpha=0.7)
+        bars1 = ax1.bar(x - width/2, favs, width, label='Favorites', color='green', alpha=0.7)
+        bars2 = ax1.bar(x + width/2, unfavs, width, label='Anti–favorites', color='red', alpha=0.7)
         
         # ax1.set_xlabel('Sędzia', fontsize=12)
-        ax1.set_ylabel('Liczba uczestników', fontsize=12)
-        ax1.set_title('Liczba faworytów i niefaworytów per sędzia', fontsize=14, fontweight='bold')
+        ax1.set_ylabel('Number of contestants', fontsize=12)
+        ax1.set_title('Number of favorites and anti–favorites per judge', fontsize=14, fontweight='bold')
         ax1.set_xticks(x)
         ax1.set_xticklabels([j.split()[-1] for j in judges_all], rotation=45, ha='right')
         ax1.legend()
@@ -1328,8 +1036,8 @@ class ChopinVisualization:
             ax2.set_yticks(range(len(judge_bias_diff)))
             ax2.set_yticklabels([j.split()[-1] for j in judge_bias_diff.index])
             ax2.axvline(x=0, color='black', linestyle='-', linewidth=0.5)
-            ax2.set_xlabel('Średnia skala faworyzowania', fontsize=12)
-            ax2.set_title('Bilans faworyzowania (+ faworyci, - niefaworyci)', fontsize=14, fontweight='bold')
+            ax2.set_xlabel('Average magnitude of favoring', fontsize=12)
+            ax2.set_title('Favoring balance (+ favorites, − anti–favorites)', fontsize=14, fontweight='bold')
             ax2.grid(True, alpha=0.3)
         
         # 3. Najsilniejsze przypadki faworyzowania
@@ -1352,7 +1060,7 @@ class ChopinVisualization:
                 ])
             
             table = ax3.table(cellText=table_data,
-                            colLabels=['Sędzia', 'Uczestnik', 'Śr. różnica', 'Etapy'],
+                            colLabels=['Judge', 'Contestant', 'Mean difference', 'Stages'],
                             cellLoc='center',
                             loc='center')
             table.auto_set_font_size(False)
@@ -1362,7 +1070,7 @@ class ChopinVisualization:
             for i in range(len(table_data)):
                 table[(i+1, 2)].set_facecolor('#90EE90')
         
-        ax3.set_title('Top 10 przypadków faworyzowania', fontsize=14, fontweight='bold', pad=20)
+        ax3.set_title('Top 10 cases of over–scoring', fontsize=14, fontweight='bold', pad=20)
         
         # 4. Najsilniejsze przypadki dyskryminacji
         ax4 = axes[1, 1]
@@ -1384,7 +1092,7 @@ class ChopinVisualization:
                 ])
             
             table2 = ax4.table(cellText=table_data2,
-                             colLabels=['Sędzia', 'Uczestnik', 'Śr. różnica', 'Etapy'],
+                             colLabels=['Judge', 'Contestant', 'Mean difference', 'Stages'],
                              cellLoc='center',
                              loc='center')
             table2.auto_set_font_size(False)
@@ -1394,9 +1102,9 @@ class ChopinVisualization:
             for i in range(len(table_data2)):
                 table2[(i+1, 2)].set_facecolor('#FFB6C1')
         
-        ax4.set_title('Top 10 przypadków niedoceniania', fontsize=14, fontweight='bold', pad=20)
+        ax4.set_title('Top 10 cases of under–scoring', fontsize=14, fontweight='bold', pad=20)
         
-        plt.suptitle('Analiza faworytów i niefaworytów sędziów', 
+        plt.suptitle('Analysis of judges’ favorites and anti–favorites',
                     fontsize=16, fontweight='bold', y=1.02)
         plt.tight_layout()
         

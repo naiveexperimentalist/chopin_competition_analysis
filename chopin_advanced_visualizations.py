@@ -18,7 +18,7 @@ plt.style.use('seaborn-v0_8-darkgrid')
 sns.set_palette("husl")
 
 
-def visualize_pca_participants(analyzer, n_components=3, min_stages=2,
+def visualize_pca_participants(analyzer, n_components=3, min_stages=4,
                                save_path='participant_pca.png'):
     """
     PCA dla uczestników - projekcja w przestrzeni 2D/3D
@@ -34,7 +34,7 @@ def visualize_pca_participants(analyzer, n_components=3, min_stages=2,
     profile_df = profile_df.loc[valid_participants]
     profile_df = profile_df.dropna(axis=1, how='all')
 
-    # Usuń uczestników z zbyt małą liczbą ocen
+    # Usuń uczestników ze zbyt małą liczbą ocen
     min_valid_scores = len(profile_df.columns) * 0.3
     valid_rows = profile_df.count(axis=1) >= min_valid_scores
     profile_df = profile_df[valid_rows]
@@ -75,65 +75,122 @@ def visualize_pca_participants(analyzer, n_components=3, min_stages=2,
     colors = sns.color_palette("Set1", n_clusters)
     cmap = ListedColormap(colors)
 
-    # Wizualizacja
+    # Wizualizacja z tabelą klastrów pod wykresami
     if n_components >= 2:
-        fig = plt.figure(figsize=(18, 6))
+        import matplotlib.gridspec as gridspec
+        # Przygotuj GridSpec: 2 wiersze, 3 kolumny (górny wiersz na wykresy, dolny na tabelę)
+        fig = plt.figure(figsize=(18, 8))
+        gs = gridspec.GridSpec(2, 1, height_ratios=[3, 1])  # dwa wiersze: górny na wykresy, dolny na tabelę
+        # pierwszy wiersz dzielimy na 3 kolumny
+        gs_top = gridspec.GridSpecFromSubplotSpec(1, 3, subplot_spec=gs[0])
+        gs_bottom = gridspec.GridSpecFromSubplotSpec(1, 3, subplot_spec=gs[1])
 
         # 2D scatter (PC1 vs PC2)
-        ax1 = fig.add_subplot(131)
+        ax1 = fig.add_subplot(gs_top[0, 0])
         scatter = ax1.scatter(pca_components[:, 0], pca_components[:, 1],
                               c=clusters, cmap=cmap, s=100, alpha=0.7, edgecolors='black',
-                              vmin=0, vmax=n_clusters - 1)
-        ax1.set_xlabel(f'PC1 ({pca.explained_variance_ratio_[0]:.2%} wariancji)', fontsize=12)
-        ax1.set_ylabel(f'PC2 ({pca.explained_variance_ratio_[1]:.2%} wariancji)', fontsize=12)
+                              vmin=0, vmax=max(n_clusters - 1, 0))
+        ax1.set_xlabel(f'PC1 ({pca.explained_variance_ratio_[0]:.2%} variance explained)', fontsize=12)
+        ax1.set_ylabel(f'PC2 ({pca.explained_variance_ratio_[1]:.2%} variance explained)', fontsize=12)
         ax1.set_title('PCA: PC1 vs PC2', fontsize=14, fontweight='bold')
         ax1.grid(True, alpha=0.3)
-        cbar1 = plt.colorbar(scatter, ax=ax1, label='Klaster')
-        cbar1.set_ticks(range(n_clusters))
-
-        # Dodaj etykiety dla wybranych punktów (finaliści)
-        finalists = [nr for nr in valid_participants
-                     if 'final' in participant_info[nr]['stages']]
+        if n_clusters > 0:
+            cbar1 = plt.colorbar(scatter, ax=ax1, label='Klaster')
+            cbar1.set_ticks(range(n_clusters))
+        # Etykiety finalistów
+        finalists = [nr for nr in valid_participants if 'final' in participant_info[nr]['stages']]
         for i, nr in enumerate(profile_df_filled.index):
             if nr in finalists:
-                info = participant_info[nr]
-                ax1.annotate(f"{nr}",
-                             (pca_components[i, 0], pca_components[i, 1]),
-                             fontsize=8, alpha=0.7)
+                ax1.annotate(f"{nr}", (pca_components[i, 0]+0.16, pca_components[i, 1]+0.16), fontsize=8, alpha=0.7)
 
+        # Drugi i trzeci wykres w górnym rzędzie
         if n_components >= 3:
-            # 2D scatter (PC1 vs PC3)
-            ax2 = fig.add_subplot(132)
+            # PC1 vs PC3
+            ax2 = fig.add_subplot(gs_top[0, 1])
             scatter2 = ax2.scatter(pca_components[:, 0], pca_components[:, 2],
                                    c=clusters, cmap=cmap, s=100, alpha=0.7, edgecolors='black',
-                                   vmin=0, vmax=n_clusters - 1)
-            ax2.set_xlabel(f'PC1 ({pca.explained_variance_ratio_[0]:.2%} wariancji)', fontsize=12)
-            ax2.set_ylabel(f'PC3 ({pca.explained_variance_ratio_[2]:.2%} wariancji)', fontsize=12)
+                                   vmin=0, vmax=max(n_clusters - 1, 0))
+            ax2.set_xlabel(f'PC1 ({pca.explained_variance_ratio_[0]:.2%} variance explained)', fontsize=12)
+            ax2.set_ylabel(f'PC3 ({pca.explained_variance_ratio_[2]:.2%} variance explained)', fontsize=12)
             ax2.set_title('PCA: PC1 vs PC3', fontsize=14, fontweight='bold')
             ax2.grid(True, alpha=0.3)
-            cbar2 = plt.colorbar(scatter2, ax=ax2, label='Klaster')
-            cbar2.set_ticks(range(n_clusters))
-
-            # 2D scatter (PC2 vs PC3)
-            ax3 = fig.add_subplot(133)
+            if n_clusters > 0:
+                cbar2 = plt.colorbar(scatter2, ax=ax2, label='Klaster')
+                cbar2.set_ticks(range(n_clusters))
+            # PC2 vs PC3
+            ax3 = fig.add_subplot(gs_top[0, 2])
             scatter3 = ax3.scatter(pca_components[:, 1], pca_components[:, 2],
                                    c=clusters, cmap=cmap, s=100, alpha=0.7, edgecolors='black',
-                                   vmin=0, vmax=n_clusters - 1)
-            ax3.set_xlabel(f'PC2 ({pca.explained_variance_ratio_[1]:.2%} wariancji)', fontsize=12)
-            ax3.set_ylabel(f'PC3 ({pca.explained_variance_ratio_[2]:.2%} wariancji)', fontsize=12)
+                                   vmin=0, vmax=max(n_clusters - 1, 0))
+            ax3.set_xlabel(f'PC2 ({pca.explained_variance_ratio_[1]:.2%} variance explained)', fontsize=12)
+            ax3.set_ylabel(f'PC3 ({pca.explained_variance_ratio_[2]:.2%} variance explained)', fontsize=12)
             ax3.set_title('PCA: PC2 vs PC3', fontsize=14, fontweight='bold')
             ax3.grid(True, alpha=0.3)
-            cbar3 = plt.colorbar(scatter3, ax=ax3, label='Klaster')
-            cbar3.set_ticks(range(n_clusters))
+            if n_clusters > 0:
+                cbar3 = plt.colorbar(scatter3, ax=ax3, label='Klaster')
+                cbar3.set_ticks(range(n_clusters))
+        else:
+            # Jeśli mamy tylko 2 komponenty, rozciągnij wykres na pozostałe kolumny
+            ax2 = fig.add_subplot(gs_top[0, 1:])
+            scatter2 = ax2.scatter(pca_components[:, 0], pca_components[:, 1],
+                                   c=clusters, cmap=cmap, s=100, alpha=0.7, edgecolors='black',
+                                   vmin=0, vmax=max(n_clusters - 1, 0))
+            ax2.set_xlabel(f'PC1 ({pca.explained_variance_ratio_[0]:.2%} variance explained)', fontsize=12)
+            ax2.set_ylabel(f'PC2 ({pca.explained_variance_ratio_[1]:.2%} variance explained)', fontsize=12)
+            ax2.set_title('PCA: PC1 vs PC2', fontsize=14, fontweight='bold')
+            ax2.grid(True, alpha=0.3)
+            if n_clusters > 0:
+                cbar2 = plt.colorbar(scatter2, ax=ax2, label='Cluster')
+                cbar2.set_ticks(range(n_clusters))
 
-    plt.suptitle('Analiza PCA uczestników\n' +
-                 'Projekcja profili wieloetapowych w przestrzeni głównych komponentów',
-                 fontsize=16, fontweight='bold', y=1.02)
+        # Buduj tablicę klastrów: dla każdego klastra lista uczestników "imie nazwisko (nr)"
+        cluster_members = {cid: [] for cid in range(n_clusters)}
+        for i, nr in enumerate(profile_df_filled.index):
+            cid = int(clusters[i])
+            info = participant_info.get(nr, {})
+            first_name = info.get('imię') or info.get('imie') or ''
+            last_name = info.get('nazwisko') or ''
+            cluster_members[cid].append(f"{first_name} {last_name} ({nr})".strip())
+        # Przygotuj wiersze do tabeli
+        table_rows = []
+        for cid in sorted(cluster_members.keys()):
+            members = cluster_members[cid]
+            if members:
+                # Podziel listę na linie co trzy nazwiska, aby uniknąć bardzo długich wierszy
+                # chunks = [', '.join(members[i:i+3]) for i in range(0, len(members), 3)]
+                # members_text = '\n'.join(chunks)
+                members_text = ', '.join(members)
+            else:
+                members_text = '-'
+            table_rows.append([f"Cluster {cid}", members_text])
+        # Dodaj tabelę w dolnym wierszu zajmującym wszystkie kolumny
+        ax_table = fig.add_subplot(gs_bottom[0, 0])
+        ax_table.axis("off")
+        table = ax_table.table(
+            cellText=table_rows,
+            colLabels=["Cluster", "Contestants"],
+            cellLoc="left",
+            loc="center",
+            colWidths=[0.13, 0.87]
+        )
+        # Zredukuj marginesy w komórkach (dotyczy wszystkich kolumn)
+        for (row_idx, col_idx), cell in table.get_celld().items():
+            cell.PAD = 0.02
+            if col_idx == 0:
+                cell.loc = "center"
 
-    plt.tight_layout()
-    plt.savefig(save_path, dpi=300, bbox_inches='tight')
-    plt.close()
-    print(f"Zapisano PCA uczestników: {save_path}")
+        table.auto_set_font_size(False)
+        table.set_fontsize(8)
+        # table.auto_set_column_width(col=[0, 3])
+
+        plt.suptitle('PCA of contestants\n' +
+                     'Projection of multi–stage profiles in principal–component space',
+                     fontsize=16, fontweight='bold', y=0.97)
+        # rect param sprawia, że tytuł nie nakłada się na wykresy
+        plt.tight_layout(rect=(0, 0, 1, 0.92))
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.close()
+        print(f"Zapisano PCA uczestników: {save_path}")
 
     # Zwróć wyjaśnioną wariancję
     variance_df = pd.DataFrame({
@@ -204,18 +261,24 @@ def visualize_pca_judges(analyzer, save_path='judge_pca.png'):
 
     # Etykiety sędziów
     for i, judge in enumerate(profile_df_filled.index):
+        print(f'x-{judge}-x')
+        x_offset = 0
+        if str(judge) == 'K. Popowa-Zydroń':
+            x_offset = 1.3
+        elif str(judge) == 'Krzysztof Jabłoński':
+            x_offset = 0.5
         ax.annotate(judge,
-                    (pca_components[i, 0] + 2.0, pca_components[i, 1] + 0.42),
+                    (pca_components[i, 0] + x_offset, pca_components[i, 1] + 0.42),
                     fontsize=10, ha='center', va='center',
                     bbox=dict(boxstyle='round,pad=0.3', facecolor='yellow', alpha=0.3))
 
-    ax.set_xlabel(f'PC1 ({pca.explained_variance_ratio_[0]:.2%} wariancji)', fontsize=12)
-    ax.set_ylabel(f'PC2 ({pca.explained_variance_ratio_[1]:.2%} wariancji)', fontsize=12)
-    ax.set_title('Analiza PCA sędziów\n' +
-                 'Podobieństwa w stylach oceniania przez wszystkie etapy',
+    ax.set_xlabel(f'PC1 ({pca.explained_variance_ratio_[0]:.2%} variance explained)', fontsize=12)
+    ax.set_ylabel(f'PC2 ({pca.explained_variance_ratio_[1]:.2%} variance explained)', fontsize=12)
+    ax.set_title('PCA of judges\n' +
+                 'Similarities in scoring styles across all stages',
                  fontsize=16, fontweight='bold', pad=20)
     ax.grid(True, alpha=0.3)
-    cbar = plt.colorbar(scatter, ax=ax, label='Klaster')
+    cbar = plt.colorbar(scatter, ax=ax, label='Cluster')
     cbar.set_ticks(range(n_clusters))
 
     plt.tight_layout()
@@ -374,11 +437,11 @@ def visualize_multistage_heatmap(analyzer, save_path='multistage_heatmap.png'):
                xticklabels=[col.split('_')[0] for col in final_profile_df.columns],
                ax=ax, linewidths=0.5, linecolor='gray')
 
-    ax.set_title('Heatmapa wszystkich ocen ze wszystkich etapów\n' +
-                '(uczestnicy posortowani według miejsca zajętego w konkursie)',
+    ax.set_title('Heatmap of all scores across all stages\n' +
+                '(contestants sorted by final placement)',
                 fontsize=16, fontweight='bold', pad=20)
-    ax.set_xlabel('Sędzia_Etap', fontsize=12)
-    ax.set_ylabel('Uczestnik', fontsize=12)
+    ax.set_xlabel('', fontsize=12)
+    ax.set_ylabel('', fontsize=12)
     
     # Dodaj linie separujące etapy
     stage_boundaries = []
@@ -473,10 +536,10 @@ def visualize_judge_consistency(analyzer, save_path='judge_consistency.png'):
     bars = ax1.barh(range(len(consistency_df)), consistency_df['mean_correlation'], color=colors)
     ax1.set_yticks(range(len(consistency_df)))
     ax1.set_yticklabels(consistency_df['judge'])
-    ax1.set_xlabel('Średnia korelacja między etapami', fontsize=12)
-    ax1.set_title('Konsystencja sędziów\n(wyższa korelacja = bardziej konsystentne oceny)',
+    ax1.set_xlabel('Mean inter–stage correlation', fontsize=12)
+    ax1.set_title('Judges’ consistency\n(higher correlation = more consistent scoring)',
                  fontsize=14, fontweight='bold')
-    ax1.axvline(x=0.5, color='red', linestyle='--', alpha=0.5, label='Próg 0.5')
+    # ax1.axvline(x=0.5, color='red', linestyle='--', alpha=0.5, label='Threshold 0.5')
     ax1.legend()
     ax1.grid(True, alpha=0.3, axis='x')
     
@@ -489,9 +552,9 @@ def visualize_judge_consistency(analyzer, save_path='judge_consistency.png'):
         ax2.annotate(row['judge'], 
                     (row['mean_score'], row['mean_correlation']),
                     fontsize=8, alpha=0.7)
-    ax2.set_xlabel('Średnia ocena (przez wszystkie etapy)', fontsize=12)
-    ax2.set_ylabel('Konsystencja (korelacja)', fontsize=12)
-    ax2.set_title('Średnia ocena vs konsystencja', fontsize=14, fontweight='bold')
+    ax2.set_xlabel('Mean score (across all stages)', fontsize=12)
+    ax2.set_ylabel('Consistency (correlation)', fontsize=12)
+    ax2.set_title('Mean score vs consistency', fontsize=14, fontweight='bold')
     ax2.grid(True, alpha=0.3)
     
     # 3. Konsystencja vs zmienność
@@ -503,9 +566,9 @@ def visualize_judge_consistency(analyzer, save_path='judge_consistency.png'):
         ax3.annotate(row['judge'], 
                     (row['std_score'], row['mean_correlation']),
                     fontsize=8, alpha=0.7)
-    ax3.set_xlabel('Zmienność ocen (SD)', fontsize=12)
-    ax3.set_ylabel('Konsystencja (korelacja)', fontsize=12)
-    ax3.set_title('Zmienność vs konsystencja', fontsize=14, fontweight='bold')
+    ax3.set_xlabel('Score variability (SD)', fontsize=12)
+    ax3.set_ylabel('Consistency (correlation)', fontsize=12)
+    ax3.set_title('Variability vs consistency', fontsize=14, fontweight='bold')
     ax3.grid(True, alpha=0.3)
     
     # 4. Rozkład konsystencji
@@ -513,17 +576,17 @@ def visualize_judge_consistency(analyzer, save_path='judge_consistency.png'):
     ax4.hist(consistency_df['mean_correlation'], bins=10, color='skyblue', 
             edgecolor='black', alpha=0.7)
     ax4.axvline(x=consistency_df['mean_correlation'].median(), 
-               color='red', linestyle='--', linewidth=2, label='Mediana')
+               color='red', linestyle='--', linewidth=2, label='Median')
     ax4.axvline(x=consistency_df['mean_correlation'].mean(), 
-               color='green', linestyle='--', linewidth=2, label='Średnia')
-    ax4.set_xlabel('Konsystencja (korelacja)', fontsize=12)
-    ax4.set_ylabel('Liczba sędziów', fontsize=12)
-    ax4.set_title('Rozkład konsystencji', fontsize=14, fontweight='bold')
+               color='green', linestyle='--', linewidth=2, label='Mean')
+    ax4.set_xlabel('Consistency (correlation)', fontsize=12)
+    ax4.set_ylabel('Number of judges', fontsize=12)
+    ax4.set_title('Distribution of consistency', fontsize=14, fontweight='bold')
     ax4.legend()
     ax4.grid(True, alpha=0.3)
     
-    plt.suptitle('Analiza konsystencji sędziów między etapami\n' +
-                '(jak stabilne są oceny dla tych samych uczestników)',
+    plt.suptitle('Consistency of judges across stages\n' +
+                '(how stable the scores are for the same contestants)',
                 fontsize=16, fontweight='bold', y=1.00)
     
     plt.tight_layout()
@@ -616,10 +679,10 @@ def visualize_participant_trajectories(analyzer, top_n=20, save_path='participan
                 ax.annotate(stage_label, (x, y), fontsize=8, 
                            xytext=(5, 5), textcoords='offset points')
     
-    ax.set_xlabel('Średnia ocena', fontsize=12)
-    ax.set_ylabel('Odchylenie standardowe ocen', fontsize=12)
-    ax.set_title('Trajektorie uczestników przez etapy\n' +
-                '(średnia vs zmienność ocen w każdym etapie)',
+    ax.set_xlabel('Mean score', fontsize=12)
+    ax.set_ylabel('Standard deviation of scores', fontsize=12)
+    ax.set_title('Contestants’ trajectories across stages\n' +
+                '(mean vs variability of scores in each stage)',
                 fontsize=16, fontweight='bold', pad=20)
     ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=9)
     ax.grid(True, alpha=0.3)
@@ -762,7 +825,7 @@ def visualize_cluster_evolution(analyzer, save_path='cluster_evolution.png'):
         cmap=cmap,
         annot=True,  # Pokazuj wartości w komórkach
         fmt='.0f',  # Format liczb (bez miejsc po przecinku)
-        cbar_kws={'label': 'Numer klastra', 'ticks': [0, 1, 2, 3, 4]},
+        cbar_kws={'label': 'Cluster number', 'ticks': [0, 1, 2, 3, 4]},
         linewidths=0.5,
         linecolor='gray',
         vmin=0,
@@ -771,11 +834,11 @@ def visualize_cluster_evolution(analyzer, save_path='cluster_evolution.png'):
     )
 
     # Etykiety i tytuł
-    ax.set_title('Ewolucja przypisań do klastrów przez etapy\n' +
-                 '(dla uczestników którzy przeszli przez 3+ etapów)',
+    ax.set_title('Evolution of cluster assignments across stages\n' +
+                 '(for contestants who advanced through 3+ stages)',
                  fontsize=16, fontweight='bold', pad=20)
-    ax.set_xlabel('Etap', fontsize=12)
-    ax.set_ylabel('Uczestnik', fontsize=12)
+    ax.set_xlabel('', fontsize=12)
+    ax.set_ylabel('', fontsize=12)
 
     # Popraw etykiety osi X (nazwy etapów)
     ax.set_xticklabels(stage_cols, rotation=0)

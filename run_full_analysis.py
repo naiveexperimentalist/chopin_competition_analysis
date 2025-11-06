@@ -43,7 +43,7 @@ from chopin_advanced_visualizations import run_advanced_visualizations
 from chopin_statistical_visualization import ChopinStatisticalVisualization
 from main_analysis import analyze_normalization_impact
 from chopin_final_score_stability import FinalScoreStabilityAnalyzer, FinalScoreStabilityVisualizer
-
+from chopin_score_perturbation_bootstrap import ScorePerturbationAnalyzer, PerturbationVisualizer
 
 def main():
     parser = argparse.ArgumentParser(description="Run full Chopin competition analysis")
@@ -201,6 +201,14 @@ def main():
         bootstrap_results,
         output_dir=stability_viz_dir
     )
+
+    print("[10/10] Analiza stabilności przez perturbację ocen...")
+    perturbation_analyzer = ScorePerturbationAnalyzer(stage_files, perturbation_values=[-1.0, -0.5, 0.0, 0.5, 1.0])
+    perturbation_results = perturbation_analyzer.bootstrap_with_perturbation(n_iterations=10000)
+    perturbation_visualizer = PerturbationVisualizer(perturbation_analyzer)
+    perturbation_visualizer.create_full_report(perturbation_results, resampling_results=bootstrap_results,
+                                               output_dir=stability_viz_dir)
+
     print("\nFull analysis complete. Visualisations available in:")
     print(f"  {final_viz_dir}")
     print("CSV summaries and results available in:")
