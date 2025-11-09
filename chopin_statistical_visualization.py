@@ -174,8 +174,8 @@ class ChopinStatisticalVisualization:
             
             ax1.set_yticks(y_pos)
             ax1.set_yticklabels([j.split()[-1] for j in stats_sorted['judge']])
-            ax1.set_xlabel('Liczba outlierów', fontsize=12)
-            ax1.set_title('Liczba outlierów per sędzia\n(czerwone=wysokie, niebieskie=niskie)',
+            ax1.set_xlabel('Number of outliers', fontsize=12)
+            ax1.set_title('Number of outliers per judge\n(red=high, blue=low)',
                          fontsize=14, fontweight='bold')
             ax1.axvline(x=0, color='black', linestyle='-', linewidth=0.5)
             ax1.legend()
@@ -192,8 +192,8 @@ class ChopinStatisticalVisualization:
         labels = [f"{row['participant_name']} ({row['judge'].split()[0]} {row['judge'].split()[1][0]}.)" 
                  for _, row in top_outliers.iterrows()]
         ax2.set_yticklabels(labels, fontsize=8)
-        ax2.set_xlabel('Wielkość odchylenia od średniej', fontsize=12)
-        ax2.set_title('Top 20 najbardziej ekstremalnych ocen\n(czerwone=za wysokie, niebieskie=za niskie)',
+        ax2.set_xlabel('Magnitude of deviation from the mean', fontsize=12)
+        ax2.set_title('Top 20 most extreme scores\n(red = too high, blue = too low)',
                      fontsize=14, fontweight='bold')
         ax2.grid(True, alpha=0.3)
         
@@ -202,9 +202,9 @@ class ChopinStatisticalVisualization:
         ax3.hist(outliers['deviation'], bins=40, edgecolor='black', alpha=0.7,
                 color='orange')
         ax3.axvline(0, color='black', linestyle='-', linewidth=1)
-        ax3.set_xlabel('Odchylenie od średniej', fontsize=12)
-        ax3.set_ylabel('Liczba outlierów', fontsize=12)
-        ax3.set_title('Rozkład odchyleń dla wszystkich outlierów',
+        ax3.set_xlabel('Deviation from the mean', fontsize=12)
+        ax3.set_ylabel('Number of outliers', fontsize=12)
+        ax3.set_title('Distribution of deviations for all outliers',
                      fontsize=14, fontweight='bold')
         ax3.grid(True, alpha=0.3)
         
@@ -223,12 +223,12 @@ class ChopinStatisticalVisualization:
         bars4 = ax4.bar(range(len(ordered_stages)), ordered_counts, color=colors4)
         ax4.set_xticks(range(len(ordered_stages)))
         ax4.set_xticklabels(ordered_stages, rotation=45)
-        ax4.set_ylabel('Liczba outlierów', fontsize=12)
-        ax4.set_title('Liczba outlierów w poszczególnych etapach',
+        ax4.set_ylabel('Number of outliers', fontsize=12)
+        ax4.set_title('Number of outliers by stage',
                      fontsize=14, fontweight='bold')
         ax4.grid(True, alpha=0.3)
         
-        plt.suptitle('Analiza outlierów', fontsize=16, fontweight='bold', y=1.00)
+        plt.suptitle('Outlier analysis', fontsize=16, fontweight='bold', y=1.00)
         plt.tight_layout()
         
         if save_path:
@@ -268,8 +268,8 @@ class ChopinStatisticalVisualization:
         ax1.set_yticklabels([f"{int(row['rank'])}. {row['imię']} {row['nazwisko']}" 
                             for _, row in top_boot.iterrows()],
                            fontsize=9)
-        ax1.set_xlabel('Ocena (95% CI)', fontsize=12)
-        ax1.set_title(f'Bootstrap Confidence Intervals\nFinaliści (pokazano {n_to_show})',
+        ax1.set_xlabel('Score (95% CI)', fontsize=12)
+        ax1.set_title(f'Bootstrap Confidence Intervals\nFinalists',
                      fontsize=14, fontweight='bold')
         ax1.invert_yaxis()
         ax1.grid(True, alpha=0.3)
@@ -284,8 +284,8 @@ class ChopinStatisticalVisualization:
         ax2.set_yticklabels([f"{int(row['original_rank'])}. {row['imię']} {row['nazwisko']}"
                             for _, row in top_mc.iterrows()],
                            fontsize=9)
-        ax2.set_xlabel('Zakres możliwych miejsc (Monte Carlo)', fontsize=12)
-        ax2.set_title(f'Niepewność pozycji w rankingu\nFinaliści (pokazano {n_to_show})',
+        ax2.set_xlabel('Range of possible ranks (Monte Carlo)', fontsize=12)
+        ax2.set_title(f'Rank uncertainty\nFinalists)',
                      fontsize=14, fontweight='bold')
         ax2.grid(True, alpha=0.3)
         
@@ -299,9 +299,9 @@ class ChopinStatisticalVisualization:
         ax3 = axes[1, 0]
         ax3.scatter(bootstrap_ci['rank'], bootstrap_ci['ci_width'],
                    s=80, alpha=0.6, c=bootstrap_ci['rank'], cmap='coolwarm')
-        ax3.set_xlabel('Miejsce w rankingu', fontsize=12)
-        ax3.set_ylabel('Szerokość przedziału ufności', fontsize=12)
-        ax3.set_title('Stabilność vs Pozycja w rankingu\n(mniejsza szerokość = większa pewność)',
+        ax3.set_xlabel('Rank position', fontsize=12)
+        ax3.set_ylabel('Width of confidence interval', fontsize=12)
+        ax3.set_title('Stability vs Rank\n(saller width = higher certainty)',
                      fontsize=14, fontweight='bold')
         ax3.grid(True, alpha=0.3)
         
@@ -324,14 +324,14 @@ class ChopinStatisticalVisualization:
             ax4.plot(x, y, label=label, linewidth=2, alpha=0.7)
             ax4.axvline(row['original_rank'], color=f'C{i}', linestyle='--', alpha=0.5)
         
-        ax4.set_xlabel('Miejsce w rankingu', fontsize=12)
-        ax4.set_ylabel('Gęstość prawdopodobieństwa', fontsize=12)
-        ax4.set_title('Rozkład możliwych miejsc (Monte Carlo)\nTOP 5',
+        ax4.set_xlabel('Rank position', fontsize=12)
+        ax4.set_ylabel('Probability density', fontsize=12)
+        ax4.set_title('Possible ranks (Monte Carlo)\nTOP 5',
                      fontsize=14, fontweight='bold')
         ax4.legend(fontsize=9)
         ax4.grid(True, alpha=0.3)
         
-        plt.suptitle(f'Analiza stabilności rankingu - {stage}',
+        plt.suptitle(f'Rank stability analysis - {stage}',
                     fontsize=16, fontweight='bold', y=1.00)
         plt.tight_layout()
         
@@ -368,7 +368,7 @@ class ChopinStatisticalVisualization:
         ax1.set_xticks(range(len(x_labels)))
         ax1.set_xticklabels(x_labels, rotation=90, fontsize=8)
         ax1.set_ylabel('P-value', fontsize=12)
-        ax1.set_title('Istotność różnic między sąsiednimi miejscami\n(zielone=istotne, czerwone=nieistotne)',
+        ax1.set_title('Significance of differences between adjacent places\n(green = significant, red = not significant)',
                      fontsize=14, fontweight='bold')
         ax1.legend()
         ax1.grid(True, alpha=0.3)
@@ -385,7 +385,7 @@ class ChopinStatisticalVisualization:
         ax2.set_xticks(range(len(x_labels)))
         ax2.set_xticklabels(x_labels, rotation=90, fontsize=8)
         ax2.set_ylabel("Cohen's d (effect size)", fontsize=12)
-        ax2.set_title('Wielkość efektu różnic\n(wyższe = większa różnica)',
+        ax2.set_title('Effect size of differences\n(higher = larger difference)',
                      fontsize=14, fontweight='bold')
         ax2.legend()
         ax2.grid(True, alpha=0.3)
@@ -396,9 +396,9 @@ class ChopinStatisticalVisualization:
                               s=100, alpha=0.6, 
                               c=significance['cohens_d'].abs(), cmap='viridis')
         ax3.axhline(y=0.05, color='red', linestyle='--', linewidth=2, label='α = 0.05')
-        ax3.set_xlabel('Różnica wyników', fontsize=12)
+        ax3.set_xlabel('Score difference', fontsize=12)
         ax3.set_ylabel('P-value', fontsize=12)
-        ax3.set_title('Różnica wyników vs Istotność statystyczna\n(kolor = effect size)',
+        ax3.set_title('Score difference vs Statistical significance\n(colour = effect size)',
                      fontsize=14, fontweight='bold')
         ax3.legend()
         ax3.grid(True, alpha=0.3)
@@ -419,7 +419,7 @@ class ChopinStatisticalVisualization:
                 ])
             
             table = ax4.table(cellText=table_data,
-                            colLabels=['Rozmiar\ngrupy', 'Miejsca', 'Uczestnicy', 'Zakres\nwyników'],
+                            colLabels=['Group\nsize', 'Ranks', 'Participants', 'Score\nrange'],
                             cellLoc='left',
                             loc='center',
                             colWidths=[0.1, 0.15, 0.55, 0.15])
@@ -427,10 +427,10 @@ class ChopinStatisticalVisualization:
             table.set_fontsize(8)
             table.scale(1, 2)
             
-            ax4.set_title('Grupy statystycznie nierozróżnialne (ties)\np > 0.05',
+            ax4.set_title('Statistically indistinguishable groups (ties)\np > 0.05',
                          fontsize=14, fontweight='bold', pad=20)
         
-        plt.suptitle(f'Analiza istotności statystycznej - {stage}',
+        plt.suptitle(f'Statistical significance analysis - {stage}',
                     fontsize=16, fontweight='bold', y=1.00)
         plt.tight_layout()
         
@@ -461,11 +461,11 @@ class ChopinStatisticalVisualization:
         ax1.plot([0, 1], [0, 1], 'r--', alpha=0.5, label='y=x')
         ax1.set_xlabel("Pearson's r", fontsize=12)
         ax1.set_ylabel("Kendall's tau", fontsize=12)
-        ax1.set_title("Porównanie Kendall's tau vs Pearson's r\n(kolor = liczba wspólnych ocen)",
+        ax1.set_title("Comparison of Kendall’s τ vs Pearson’s r\n(colour = number of common scores)",
                      fontsize=14, fontweight='bold')
         ax1.legend()
         ax1.grid(True, alpha=0.3)
-        plt.colorbar(scatter1, ax=ax1, label='N wspólnych')
+        plt.colorbar(scatter1, ax=ax1, label='number of common scores')
         
         # 2. Top agreements
         ax2 = axes[0, 1]
@@ -479,7 +479,7 @@ class ChopinStatisticalVisualization:
                   for _, row in top_agreements.iterrows()]
         ax2.set_yticklabels(labels2, fontsize=9)
         ax2.set_xlabel("Kendall's tau", fontsize=12)
-        ax2.set_title('Top 15 par sędziów o największej zgodności',
+        ax2.set_title('Top 15 pairs of judges with highest agreement',
                      fontsize=14, fontweight='bold')
         ax2.grid(True, alpha=0.3)
         
@@ -489,13 +489,13 @@ class ChopinStatisticalVisualization:
                 alpha=0.7, color='skyblue')
         ax3.axvline(kendall_results['kendall_tau'].mean(), color='red',
                    linestyle='--', linewidth=2,
-                   label=f'Średnia: {kendall_results["kendall_tau"].mean():.3f}')
+                   label=f'Mean: {kendall_results["kendall_tau"].mean():.3f}')
         ax3.axvline(kendall_results['kendall_tau'].median(), color='blue',
                    linestyle='--', linewidth=2,
-                   label=f'Mediana: {kendall_results["kendall_tau"].median():.3f}')
+                   label=f'Median: {kendall_results["kendall_tau"].median():.3f}')
         ax3.set_xlabel("Kendall's tau", fontsize=12)
-        ax3.set_ylabel('Liczba par sędziów', fontsize=12)
-        ax3.set_title("Rozkład zgodności między wszystkimi parami sędziów",
+        ax3.set_ylabel('Number of judge pairs', fontsize=12)
+        ax3.set_title("Distribution of agreement among all pairs of judges",
                      fontsize=14, fontweight='bold')
         ax3.legend()
         ax3.grid(True, alpha=0.3)
@@ -512,8 +512,8 @@ class ChopinStatisticalVisualization:
                        alpha=0.7)
         ax4.set_xticks(range(len(agreement_counts)))
         ax4.set_xticklabels(agreement_counts.index)
-        ax4.set_ylabel('Liczba par sędziów', fontsize=12)
-        ax4.set_title('Klasyfikacja poziomu zgodności\n(strong: τ>0.7, moderate: τ>0.5, weak: τ≤0.5)',
+        ax4.set_ylabel('Number of judge pairs', fontsize=12)
+        ax4.set_title('Classification of agreement levels\n(strong: τ>0.7, moderate: τ>0.5, weak: τ≤0.5)',
                      fontsize=14, fontweight='bold')
         ax4.grid(True, alpha=0.3)
         
@@ -522,7 +522,7 @@ class ChopinStatisticalVisualization:
             ax4.text(bar.get_x() + bar.get_width()/2, val + 0.5, str(val),
                     ha='center', va='bottom', fontsize=12, fontweight='bold')
         
-        plt.suptitle("Analiza zgodności rankingowej między sędziami (Kendall's tau)",
+        plt.suptitle("Rank agreement analysis between judges (Kendall's tau)",
                     fontsize=16, fontweight='bold', y=1.00)
         plt.tight_layout()
         
@@ -564,9 +564,9 @@ class ChopinStatisticalVisualization:
         colors1 = plt.cm.Set3(np.linspace(0, 1, len(cluster_counts)))
         
         bars1 = ax1.bar(cluster_counts.index, cluster_counts.values, color=colors1, alpha=0.7)
-        ax1.set_xlabel('Klaster', fontsize=12)
-        ax1.set_ylabel('Liczba uczestników', fontsize=12)
-        ax1.set_title('Rozmiary klastrów uczestników',
+        ax1.set_xlabel('Cluster', fontsize=12)
+        ax1.set_ylabel('Number of contestants', fontsize=12)
+        ax1.set_title('Sizes of contestant clusters',
                      fontsize=14, fontweight='bold')
         ax1.grid(True, alpha=0.3)
         
@@ -583,9 +583,9 @@ class ChopinStatisticalVisualization:
         bars2 = ax2.bar(cluster_means.index, cluster_means.values,
                        yerr=cluster_stds.values, capsize=5,
                        color=colors1, alpha=0.7)
-        ax2.set_xlabel('Klaster', fontsize=12)
-        ax2.set_ylabel('Średnia ocena', fontsize=12)
-        ax2.set_title('Średnie oceny per klaster\n(error bars = SD)',
+        ax2.set_xlabel('Cluster', fontsize=12)
+        ax2.set_ylabel('Mean score', fontsize=12)
+        ax2.set_title('Mean scores per cluster\n(error bars = SD)',
                      fontsize=14, fontweight='bold')
         ax2.grid(True, alpha=0.3)
         
@@ -594,11 +594,11 @@ class ChopinStatisticalVisualization:
         for cluster_id in sorted(clusters_df['cluster'].unique()):
             cluster_data = clusters_df[clusters_df['cluster'] == cluster_id]
             ax3.scatter(cluster_data['mean_score'], cluster_data['std_score'],
-                       label=f'Klaster {cluster_id}', s=100, alpha=0.6)
+                       label=f'Cluster {cluster_id}', s=100, alpha=0.6)
         
-        ax3.set_xlabel('Średnia ocena uczestnika', fontsize=12)
-        ax3.set_ylabel('SD ocen uczestnika', fontsize=12)
-        ax3.set_title('Średnia vs Zmienność ocen (kolorowane po klastrach)',
+        ax3.set_xlabel('Contestant''s mean score', fontsize=12)
+        ax3.set_ylabel('SD of contestant''s scores', fontsize=12)
+        ax3.set_title('Mean vs Variability of scores (coloured by cluster)',
                      fontsize=14, fontweight='bold')
         ax3.legend()
         ax3.grid(True, alpha=0.3)
@@ -629,7 +629,7 @@ class ChopinStatisticalVisualization:
             participants.sort()  # Sortowanie alfabetyczne
             
             # Nagłówek klastra
-            ax4.text(x_position, y_position, f"Klaster {cluster_id}:",
+            ax4.text(x_position, y_position, f"Cluster {cluster_id}:",
                     fontsize=11, fontweight='bold', 
                     transform=ax4.transAxes, va='top')
             y_position -= line_height
@@ -642,14 +642,14 @@ class ChopinStatisticalVisualization:
             
             y_position -= line_height * 0.3  # Odstęp między klastrami
         
-        ax4.set_title('Uczestnicy w każdym klastrze (alfabetycznie)',
+        ax4.set_title('Contestants in each cluster (alphabetically)',
                      fontsize=14, fontweight='bold', pad=20)
         
         # Zmień tytuł w zależności od trybu
         if multistage_finalists:
-            title = 'Analiza clusteringu uczestników - finaliści (wszystkie etapy)'
+            title = 'Cluster analysis of contestants - finalists (all stages)'
         else:
-            title = f'Analiza clusteringu uczestników - {stage}'
+            title = f'Cluster analysis of contestants - {stage}'
         
         plt.suptitle(title, fontsize=16, fontweight='bold', y=1.00)
         plt.tight_layout()
@@ -682,12 +682,12 @@ class ChopinStatisticalVisualization:
         ax1 = axes[0, 0]
         n_components = len(variance_ratio)
         ax1.bar(range(1, n_components+1), variance_ratio, alpha=0.7, color='skyblue',
-               label='Indywidualna')
+               label='Individual')
         ax1.plot(range(1, n_components+1), np.cumsum(variance_ratio), 'ro-',
-                linewidth=2, label='Skumulowana')
-        ax1.set_xlabel('Komponent główny', fontsize=12)
-        ax1.set_ylabel('Procent wyjaśnionej wariancji', fontsize=12)
-        ax1.set_title('Scree Plot - Wyjaśniona wariancja',
+                linewidth=2, label='Cumulative')
+        ax1.set_xlabel('Principal component', fontsize=12)
+        ax1.set_ylabel('Percentage of explained variance', fontsize=12)
+        ax1.set_title('Scree Plot – explained variance',
                      fontsize=14, fontweight='bold')
         ax1.legend()
         ax1.grid(True, alpha=0.3)
@@ -712,9 +712,9 @@ class ChopinStatisticalVisualization:
         
         ax2.axhline(y=0, color='gray', linestyle='--', alpha=0.5)
         ax2.axvline(x=0, color='gray', linestyle='--', alpha=0.5)
-        ax2.set_xlabel(f'PC1 ({variance_ratio[0]*100:.1f}% wariancji)', fontsize=12)
-        ax2.set_ylabel(f'PC2 ({variance_ratio[1]*100:.1f}% wariancji)', fontsize=12)
-        ax2.set_title('Biplot PC1 vs PC2\nProfile sędziów w przestrzeni głównych komponentów',
+        ax2.set_xlabel(f'PC1 ({variance_ratio[0]*100:.1f}% variance)', fontsize=12)
+        ax2.set_ylabel(f'PC2 ({variance_ratio[1]*100:.1f}% variance)', fontsize=12)
+        ax2.set_title('Biplot PC1 vs PC2\nJudge profiles in principal component space',
                      fontsize=14, fontweight='bold')
         ax2.grid(True, alpha=0.3)
         
@@ -738,8 +738,8 @@ class ChopinStatisticalVisualization:
             
             ax3.axhline(y=0, color='gray', linestyle='--', alpha=0.5)
             ax3.axvline(x=0, color='gray', linestyle='--', alpha=0.5)
-            ax3.set_xlabel(f'PC1 ({variance_ratio[0]*100:.1f}% wariancji)', fontsize=12)
-            ax3.set_ylabel(f'PC3 ({variance_ratio[2]*100:.1f}% wariancji)', fontsize=12)
+            ax3.set_xlabel(f'PC1 ({variance_ratio[0]*100:.1f}% variance)', fontsize=12)
+            ax3.set_ylabel(f'PC3 ({variance_ratio[2]*100:.1f}% variance)', fontsize=12)
             ax3.set_title('Biplot PC1 vs PC3',
                          fontsize=14, fontweight='bold')
             ax3.grid(True, alpha=0.3)
@@ -759,18 +759,18 @@ class ChopinStatisticalVisualization:
             ])
         
         table = ax4.table(cellText=table_data,
-                        colLabels=['Komponent', 'Wariancja', 'Skumulowana'],
+                        colLabels=['Component', 'Variance', 'Cumulative'],
                         cellLoc='center',
-                        loc='center',
+                        loc='top',
                         colWidths=[0.3, 0.35, 0.35])
         table.auto_set_font_size(False)
         table.set_fontsize(11)
         table.scale(1, 2.5)
         
-        ax4.set_title('Wyjaśniona wariancja per komponent',
+        ax4.set_title('Variance explained per component',
                      fontsize=14, fontweight='bold', pad=20)
         
-        plt.suptitle('Analiza PCA profili sędziów',
+        plt.suptitle('PCA analysis of judges’ profiles',
                     fontsize=16, fontweight='bold', y=1.00)
         plt.tight_layout()
         

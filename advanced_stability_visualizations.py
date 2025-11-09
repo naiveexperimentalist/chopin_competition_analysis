@@ -101,10 +101,10 @@ class AdvancedStabilityVisualizer:
         ax1.set_yticks(y_pos)
         ax1.set_yticklabels([f"{row['actual_rank']}. {row['participant'][:25]}" 
                              for _, row in rank_changes_df.iterrows()], fontsize=9)
-        ax1.set_xlabel('Pozycja w rankingu', fontsize=12)
-        ax1.set_ylabel('Uczestnik (rzeczywista pozycja. nazwisko)', fontsize=12)
-        ax1.set_title('Możliwe zmiany pozycji w rankingu\n' +
-                     'Linia = 90% przedział możliwych pozycji, Czerwony punkt = rzeczywista pozycja',
+        ax1.set_xlabel('Rank position', fontsize=12)
+        ax1.set_ylabel('Contestant', fontsize=12)
+        ax1.set_title('Possible rank changes\n' +
+                     'Line = 90% interval of possible positions; red dot = actual rank.',
                      fontsize=13, fontweight='bold')
         ax1.invert_xaxis()
         ax1.grid(True, alpha=0.3, axis='x')
@@ -121,10 +121,9 @@ class AdvancedStabilityVisualizer:
         ax2.set_yticks(range(len(df_sorted_by_range)))
         ax2.set_yticklabels([f"{row['actual_rank']}. {row['participant'][:25]}" 
                             for _, row in df_sorted_by_range.iterrows()], fontsize=9)
-        ax2.set_xlabel('Rozpiętość możliwych pozycji', fontsize=12)
-        ax2.set_ylabel('Uczestnik', fontsize=12)
-        ax2.set_title('Niestabilność pozycji w rankingu\n' +
-                     'Największa możliwa zmiana pozycji',
+        ax2.set_xlabel('Range of possible ranks', fontsize=12)
+        ax2.set_ylabel('Contestant', fontsize=12)
+        ax2.set_title('Instability of rank position\nLargest possible rank change',
                      fontsize=13, fontweight='bold')
         ax2.grid(True, alpha=0.3, axis='x')
         
@@ -141,10 +140,10 @@ class AdvancedStabilityVisualizer:
                         (row['rank'], row['stability_score']),
                         fontsize=9, alpha=0.8)
         
-        ax3.set_xlabel('Pozycja w rankingu', fontsize=12)
+        ax3.set_xlabel('Rank position', fontsize=12)
         ax3.set_ylabel('Stability Score (0-100)', fontsize=12)
-        ax3.set_title('Stability Score vs Pozycja\n' +
-                     '100 = najbardziej stabilny, 0 = najmniej stabilny',
+        ax3.set_title('Stability Score vs Rank\n' +
+                     '100 = most stable, 0 = least stable',
                      fontsize=13, fontweight='bold')
         ax3.grid(True, alpha=0.3)
         plt.colorbar(scatter, ax=ax3, label='Stability Score')
@@ -161,13 +160,13 @@ class AdvancedStabilityVisualizer:
         ax4.set_yticklabels([f"{row['rank']}. {row['participant'][:25]}" 
                             for _, row in top_stable.iterrows()], fontsize=9)
         ax4.set_xlabel('Stability Score', fontsize=12)
-        ax4.set_ylabel('Uczestnik', fontsize=12)
-        ax4.set_title('Ranking według stabilności wyniku\n' +
-                     'Wyżej = bardziej stabilny wynik',
+        ax4.set_ylabel('Contestant', fontsize=12)
+        ax4.set_title('Contestant i Ranking by stability score\n' +
+                     'Higher = more stable',
                      fontsize=13, fontweight='bold')
         ax4.grid(True, alpha=0.3, axis='x')
         
-        plt.suptitle('Analiza stabilności wyniku końcowego - Finaliści',
+        plt.suptitle('Stability analysis of final results — finalists',
                     fontsize=16, fontweight='bold', y=0.995)
         plt.tight_layout()
         
@@ -181,8 +180,6 @@ class AdvancedStabilityVisualizer:
         
         return rank_changes_df, stability_df
     
-    def visualize_overlapping_intervals(self, confidence: float = 0.95,
-                                       save_path: str = None):
     def visualize_overlapping_intervals(self, confidence: float = 0.95,
                                        save_path: str = None):
         """
@@ -241,11 +238,11 @@ class AdvancedStabilityVisualizer:
         
         ax.set_yticks(y_pos)
         ax.set_yticklabels(df['participant'], fontsize=9)
-        ax.set_xlabel('Wynik końcowy', fontsize=12)
-        ax.set_ylabel('Uczestnik (pozycja. nazwisko)', fontsize=12)
-        ax.set_title(f'Nakładające się przedziały ufności ({confidence*100:.0f}%) - Finaliści\n' +
-                    f'Czerwony punkt = rzeczywisty wynik, Szare linie = statystycznie nierozróżnialne pary\n' +
-                    f'Znaleziono {len(overlaps)} par z nakładającymi się przedziałami',
+        ax.set_xlabel('Final results', fontsize=12)
+        ax.set_ylabel('Contestant', fontsize=12)
+        ax.set_title(f'Overlapping confidence intervals ({confidence*100:.0f}%) — finalists\n' +
+                    f'Red dot = actual rank, Gray lines = statistically indistinguishable pairs\n' +
+                    f'Found {len(overlaps)} pairs with overlapping confidence intervals',
                     fontsize=14, fontweight='bold', pad=20)
         ax.grid(True, alpha=0.3, axis='x')
         

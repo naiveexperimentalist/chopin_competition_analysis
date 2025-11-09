@@ -241,15 +241,15 @@ class FinalScoreStabilityAnalyzer:
 
 class FinalScoreStabilityVisualizer:
     """Wizualizacje stabilności wyniku końcowego"""
-    
+
     def __init__(self, analyzer: FinalScoreStabilityAnalyzer):
         self.analyzer = analyzer
-    
+
     def visualize_score_distributions(self, bootstrap_results: Dict[int, List[float]],
-                                     save_path: str = None):
+                                      save_path: str = None):
         """
         Violin plots rozkładów wyników końcowych dla wszystkich finalistów
-        
+
         Args:
             bootstrap_results: wyniki bootstrapu
             save_path: ścieżka do zapisu
@@ -257,14 +257,14 @@ class FinalScoreStabilityVisualizer:
         # Pobierz rzeczywiste wyniki i nazwy
         actual_scores = self.analyzer.get_actual_final_scores()
         top_participants = actual_scores  # wszyscy finaliści
-        
+
         # Przygotuj dane do violin plot
         plot_data = []
         for _, row in top_participants.iterrows():
             nr = row['Nr']
             name = f"{row['rank']}. {row['nazwisko']}"
             actual_score = row['final_score']
-            
+
             for score in bootstrap_results[nr]:
                 plot_data.append({
                     'participant': name,
@@ -272,68 +272,69 @@ class FinalScoreStabilityVisualizer:
                     'score': score,
                     'actual_score': actual_score
                 })
-        
+
         df = pd.DataFrame(plot_data)
-        
+
         # Rysuj
         fig, ax = plt.subplots(figsize=(16, max(10, len(top_participants) * 0.4)))
-        
+
         # Sortuj po rankingu
-        order = [f"{r}. {n}" for r, n in 
-                zip(top_participants['rank'], top_participants['nazwisko'])]
-        
+        order = [f"{r}. {n}" for r, n in
+                 zip(top_participants['rank'], top_participants['nazwisko'])]
+
         # Violin plot
-        sns.violinplot(data=df, y='participant', x='score', order=order, 
-                      inner='quartile', ax=ax, palette='Set2')
-        
+        sns.violinplot(data=df, y='participant', x='score', order=order,
+                       inner='quartile', ax=ax, palette='Set2')
+
         # Dodaj czerwone punkty dla rzeczywistych wyników
         for i, (_, row) in enumerate(top_participants.iterrows()):
-            ax.plot(row['final_score'], i, 'ro', markersize=8, 
-                   label='Rzeczywisty wynik' if i == 0 else '')
-        
-        ax.set_xlabel('Wynik końcowy', fontsize=12)
-        ax.set_ylabel('Uczestnik (ranga. nazwisko)', fontsize=12)
-        ax.set_title('Stabilność wyniku końcowego - Finaliści\n' +
-                    'Rozkład możliwych wyników z bootstrapu (losowanie sędziów we wszystkich etapach)',
-                    fontsize=16, fontweight='bold', pad=20)
+            ax.plot(row['final_score'], i, 'ro', markersize=8,
+                    label='Actual score' if i == 0 else '')
+
+        ax.set_xlabel('Final score', fontsize=12)
+        ax.set_ylabel('Contestant (rank, surname)', fontsize=12)
+        ax.set_title('Final score stability — finalists\n'
+                     'Distributions of possible scores from bootstrap '
+                     '(resampling judges across all stages)',
+                     fontsize=16, fontweight='bold', pad=20)
         ax.legend()
         ax.grid(True, alpha=0.3, axis='x')
-        
+
         plt.tight_layout()
-        
+
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches='tight')
             print(f"Zapisano: {save_path}")
         else:
             plt.show()
-        
+
         plt.close()
-    
+
     def visualize_confidence_intervals(self, bootstrap_results: Dict[int, List[float]],
-                                      confidence: float = 0.95, save_path: str = None):
+                                       confidence: float = 0.95, save_path: str = None):
         """
         Wizualizacja przedziałów ufności dla wyników końcowych
-        
+
         Args:
             bootstrap_results: wyniki bootstrapu
             confidence: poziom ufności (np. 0.95)
             save_path: ścieżka do zapisu
         """
         actual_scores = self.analyzer.get_actual_final_scores()
-        
+
         # Oblicz przedziały ufności
         ci_data = []
         alpha = (1 - confidence) / 2
-        
+
         for _, row in actual_scores.iterrows():
             nr = row['Nr']
             scores = bootstrap_results[nr]
-            
+
             ci_low = np.percentile(scores, alpha * 100)
             ci_high = np.percentile(scores, (1 - alpha) * 100)
             ci_width = ci_high - ci_low
             std = np.std(scores)
-            
+
             ci_data.append({
                 'rank': row['rank'],
                 'participant': f"{row['imię']} {row['nazwisko']}",
@@ -343,85 +344,85 @@ class FinalScoreStabilityVisualizer:
                 'ci_width': ci_width,
                 'std': std
             })
-        
+
         ci_df = pd.DataFrame(ci_data)
-        
+
         # Rysuj
         fig, axes = plt.subplots(2, 1, figsize=(16, 14))
-        
+
         # 1. Error bars dla przedziałów ufności
         ax1 = axes[0]
-        
+
         y_pos = range(len(ci_df))
-        ax1.errorbar(ci_df['actual_score'], y_pos, 
-                    xerr=[ci_df['actual_score'] - ci_df['ci_low'],
-                          ci_df['ci_high'] - ci_df['actual_score']],
-                    fmt='o', markersize=6, capsize=5, capthick=2,
-                    alpha=0.7, label=f'{confidence*100:.0f}% przedział ufności')
-        
+        ax1.errorbar(ci_df['actual_score'], y_pos,
+                     xerr=[ci_df['actual_score'] - ci_df['ci_low'],
+                           ci_df['ci_high'] - ci_df['actual_score']],
+                     fmt='o', markersize=6, capsize=5, capthick=2,
+                     alpha=0.7, label=f'{confidence * 100:.0f}% confidence interval')
+
         ax1.set_yticks(y_pos)
-        ax1.set_yticklabels([f"{row['rank']}. {row['participant'][:30]}" 
-                            for _, row in ci_df.iterrows()], fontsize=8)
-        ax1.set_xlabel('Wynik końcowy', fontsize=12)
-        ax1.set_ylabel('Uczestnik', fontsize=12)
-        ax1.set_title(f'Przedziały ufności ({confidence*100:.0f}%) dla wyniku końcowego\n' +
-                     'Czerwony punkt = rzeczywisty wynik, linie = możliwy zakres',
-                     fontsize=14, fontweight='bold')
+        ax1.set_yticklabels([f"{row['rank']}. {row['participant'][:30]}"
+                             for _, row in ci_df.iterrows()], fontsize=8)
+        ax1.set_xlabel('Final score', fontsize=12)
+        ax1.set_ylabel('Contestant', fontsize=12)
+        ax1.set_title(f'Confidence intervals ({confidence * 100:.0f}%) for final score\n'
+                      'Red dot = actual score; lines = possible range',
+                      fontsize=14, fontweight='bold')
         ax1.legend()
         ax1.grid(True, alpha=0.3, axis='x')
         ax1.invert_yaxis()
-        
+
         # 2. Szerokość przedziału ufności (niestabilność)
         ax2 = axes[1]
-        
+
         top_unstable = ci_df.nlargest(30, 'ci_width')
         colors = plt.cm.Reds(np.linspace(0.3, 0.9, len(top_unstable)))
-        
-        bars = ax2.barh(range(len(top_unstable)), top_unstable['ci_width'], 
-                       color=colors, alpha=0.7)
+
+        bars = ax2.barh(range(len(top_unstable)), top_unstable['ci_width'],
+                        color=colors, alpha=0.7)
         ax2.set_yticks(range(len(top_unstable)))
-        ax2.set_yticklabels([f"{row['rank']}. {row['participant'][:30]}" 
-                            for _, row in top_unstable.iterrows()], fontsize=8)
-        ax2.set_xlabel('Szerokość przedziału ufności (punkty)', fontsize=12)
-        ax2.set_ylabel('Uczestnik', fontsize=12)
-        ax2.set_title('Niestabilność wyników\n' +
-                     '(im szerszy przedział, tym większa niepewność)',
-                     fontsize=14, fontweight='bold')
+        ax2.set_yticklabels([f"{row['rank']}. {row['participant'][:30]}"
+                             for _, row in top_unstable.iterrows()], fontsize=8)
+        ax2.set_xlabel('Confidence-interval width (points)', fontsize=12)
+        ax2.set_ylabel('Contestant', fontsize=12)
+        ax2.set_title('Result uncertainty\n'
+                      '(wider interval implies greater uncertainty)',
+                      fontsize=14, fontweight='bold')
         ax2.grid(True, alpha=0.3, axis='x')
-        
+
         plt.tight_layout()
-        
+
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches='tight')
             print(f"Zapisano: {save_path}")
         else:
             plt.show()
-        
+
         plt.close()
-    
+
     def visualize_ranking_stability_matrix(self, bootstrap_results: Dict[int, List[float]],
-                                          save_path: str = None):
+                                           save_path: str = None):
         """
         Heatmapa prawdopodobieństwa zajęcia danej pozycji w rankingu
-        
+
         Args:
             bootstrap_results: wyniki bootstrapu
             save_path: ścieżka do zapisu
         """
         actual_scores = self.analyzer.get_actual_final_scores()
         top_participants = actual_scores  # wszyscy finaliści
-        
+
         # Dla każdej iteracji bootstrapu, oblicz ranking
         n_iterations = len(list(bootstrap_results.values())[0])
         n_finalists = len(top_participants)
         ranking_matrix = np.zeros((n_finalists, n_finalists))
-        
+
         print("Obliczam macierz stabilności rankingu...")
-        
+
         for iteration in range(n_iterations):
             if (iteration + 1) % 1000 == 0:
                 print(f"  Iteracja {iteration + 1}/{n_iterations}")
-            
+
             # Pobierz wyniki wszystkich uczestników w tej iteracji
             iter_scores = []
             for _, row in top_participants.iterrows():
@@ -430,158 +431,157 @@ class FinalScoreStabilityVisualizer:
                     'nr': nr,
                     'score': bootstrap_results[nr][iteration]
                 })
-            
+
             # Posortuj i przypisz rangi
             iter_df = pd.DataFrame(iter_scores)
             iter_df = iter_df.sort_values('score', ascending=False).reset_index(drop=True)
             iter_df['bootstrap_rank'] = range(1, len(iter_df) + 1)
-            
+
             # Zlicz wystąpienia
             for idx, (_, row) in enumerate(top_participants.iterrows()):
                 nr = row['Nr']
                 bootstrap_rank = iter_df[iter_df['nr'] == nr]['bootstrap_rank'].iloc[0]
                 ranking_matrix[idx, bootstrap_rank - 1] += 1
-        
+
         # Normalizuj do prawdopodobieństw
         ranking_matrix = ranking_matrix / n_iterations * 100
-        
+
         # Rysuj heatmapę
         fig, ax = plt.subplots(figsize=(16, 12))
-        
-        participant_labels = [f"{row['rank']}. {row['nazwisko']}" 
-                             for _, row in top_participants.iterrows()]
-        
+
+        participant_labels = [f"{row['rank']}. {row['nazwisko']}"
+                              for _, row in top_participants.iterrows()]
+
         sns.heatmap(ranking_matrix, annot=True, fmt='.1f', cmap='YlOrRd',
-                   xticklabels=range(1, n_finalists + 1),
-                   yticklabels=participant_labels,
-                   cbar_kws={'label': 'Prawdopodobieństwo (%)'},
-                   ax=ax)
-        
-        ax.set_xlabel('Możliwa pozycja w rankingu', fontsize=12)
-        ax.set_ylabel('Uczestnik (rzeczywista pozycja. nazwisko)', fontsize=12)
-        ax.set_title('Macierz stabilności rankingu - Finaliści\n' +
-                    'Prawdopodobieństwo zajęcia danej pozycji bootstrapie',
-                    fontsize=16, fontweight='bold', pad=20)
-        
+                    xticklabels=range(1, n_finalists + 1),
+                    yticklabels=participant_labels,
+                    cbar_kws={'label': 'Probability (%)'},
+                    ax=ax)
+
+        ax.set_xlabel('Possible rank position', fontsize=12)
+        ax.set_ylabel('Contestant (actual position, surname)', fontsize=12)
+        ax.set_title('Ranking stability matrix — finalists\n'
+                     'Probability of occupying each position (bootstrap)',
+                     fontsize=16, fontweight='bold', pad=20)
+
         plt.tight_layout()
-        
+
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches='tight')
             print(f"Zapisano: {save_path}")
         else:
             plt.show()
-        
+
         plt.close()
-    
+
     def visualize_score_vs_uncertainty(self, bootstrap_results: Dict[int, List[float]],
-                                      save_path: str = None):
+                                       save_path: str = None):
         """
         Scatter plot: wynik końcowy vs niepewność (SD)
-        
+
         Args:
             bootstrap_results: wyniki bootstrapu
             save_path: ścieżka do zapisu
         """
         actual_scores = self.analyzer.get_actual_final_scores()
-        
+
         # Oblicz SD dla każdego uczestnika
         scatter_data = []
         for _, row in actual_scores.iterrows():
             nr = row['Nr']
             scores = bootstrap_results[nr]
             std = np.std(scores)
-            
+
             scatter_data.append({
                 'participant': f"{row['imię']} {row['nazwisko']}",
                 'rank': row['rank'],
                 'actual_score': row['final_score'],
                 'std': std
             })
-        
+
         df = pd.DataFrame(scatter_data)
-        
+
         # Rysuj
         fig, ax = plt.subplots(figsize=(14, 10))
-        
+
         # Scatter plot z kolorami wg rankingu
-        scatter = ax.scatter(df['actual_score'], df['std'], 
-                           s=150, alpha=0.6, c=df['rank'], 
-                           cmap='viridis_r', edgecolors='black', linewidth=0.5)
-        
-        # Annotacje dla top 10 i najbardziej niestabilnych
-        top_10 = df[df['rank'] <= 10]
+        scatter = ax.scatter(df['actual_score'], df['std'],
+                             s=150, alpha=0.6, c=df['rank'],
+                             cmap='viridis_r', edgecolors='black', linewidth=0.5)
+
+        top_13 = df[df['rank'] <= 13]
         most_unstable = df.nlargest(5, 'std')
-        to_annotate = pd.concat([top_10, most_unstable]).drop_duplicates()
-        
+        to_annotate = pd.concat([top_13, most_unstable]).drop_duplicates()
+
         for _, row in to_annotate.iterrows():
-            ax.annotate(f"{row['rank']}. {row['participant'].split()[-1]}", 
-                       (row['actual_score'], row['std']),
-                       fontsize=8, alpha=0.8, 
-                       xytext=(5, 5), textcoords='offset points')
-        
-        ax.set_xlabel('Rzeczywisty wynik końcowy', fontsize=12)
-        ax.set_ylabel('Odchylenie standardowe (niepewność)', fontsize=12)
-        ax.set_title('Wynik końcowy vs Niepewność\n' +
-                    'Kolor = pozycja w rankingu (ciemniejszy = wyżej)',
-                    fontsize=16, fontweight='bold', pad=20)
+            ax.annotate(f"{row['rank']}. {row['participant'].split()[-1]}",
+                        (row['actual_score'], row['std']),
+                        fontsize=8, alpha=0.8,
+                        xytext=(5, 5), textcoords='offset points')
+
+        ax.set_xlabel('Actual final score', fontsize=12)
+        ax.set_ylabel('Standard deviation (uncertainty)', fontsize=12)
+        ax.set_title('Final score vs uncertainty\n'
+                     'Colour = rank position (darker = higher)',
+                     fontsize=16, fontweight='bold', pad=20)
         ax.grid(True, alpha=0.3)
-        
-        plt.colorbar(scatter, ax=ax, label='Pozycja w rankingu')
-        
+
+        plt.colorbar(scatter, ax=ax, label='Rank position')
+
         plt.tight_layout()
-        
+
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches='tight')
             print(f"Zapisano: {save_path}")
         else:
             plt.show()
-        
+
         plt.close()
-    
+
     def create_full_stability_report(self, bootstrap_results: Dict[int, List[float]],
-                                    output_dir: str = 'final_score_stability'):
+                                     output_dir: str = 'final_score_stability'):
         """
         Tworzy kompletny raport stabilności wyniku końcowego
-        
+
         Args:
             bootstrap_results: wyniki bootstrapu
             output_dir: katalog wyjściowy
         """
         import os
         os.makedirs(output_dir, exist_ok=True)
-        
-        print(f"\n{'='*60}")
+
+        print(f"\n{'=' * 60}")
         print("GENEROWANIE RAPORTU STABILNOŚCI WYNIKU KOŃCOWEGO")
-        print(f"{'='*60}\n")
-        
+        print(f"{'=' * 60}\n")
+
         print("1/4 Rozkłady wyników (violin plots)...")
         self.visualize_score_distributions(
             bootstrap_results,
             save_path=f'{output_dir}/34_score_distributions.png'
         )
-        
+
         print("\n2/4 Przedziały ufności...")
         self.visualize_confidence_intervals(
             bootstrap_results, confidence=0.95,
             save_path=f'{output_dir}/35_confidence_intervals.png'
         )
-        
+
         print("\n3/4 Macierz stabilności rankingu...")
         self.visualize_ranking_stability_matrix(
             bootstrap_results,
             save_path=f'{output_dir}/36_ranking_stability_matrix.png'
         )
-        
+
         print("\n4/4 Wynik vs niepewność...")
         self.visualize_score_vs_uncertainty(
             bootstrap_results,
             save_path=f'{output_dir}/37_score_vs_uncertainty.png'
         )
-        
-        print(f"\n{'='*60}")
+
+        print(f"\n{'=' * 60}")
         print(f"RAPORT ZAKOŃCZONY!")
         print(f"Wszystkie wizualizacje zapisane w: {output_dir}/")
-        print(f"{'='*60}\n")
+        print(f"{'=' * 60}\n")
 
 
 def main():

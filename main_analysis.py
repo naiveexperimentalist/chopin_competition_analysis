@@ -200,11 +200,11 @@ def visualize_normalization_comparison(normalization_results: dict, save_path: s
 
         # Tło
         bg_color = bg_colors[idx % 2]
-        rect_bg = mpatches.Rectangle((0, 0), 1, 1,
-                                     linewidth=0,
-                                     facecolor=bg_color,
-                                     transform=ax.transAxes, zorder=0)
-        ax.add_patch(rect_bg)
+        # rect_bg = mpatches.Rectangle((0, 0), 1, 1,
+        #                              linewidth=0,
+        #                              facecolor=bg_color,
+        #                              transform=ax.transAxes, zorder=0)
+        # ax.add_patch(rect_bg)
 
         # Tytuł metody normalizacji
         ax.text(0.5, 0.97, f'Normalization: {method_labels[norm_method]}',

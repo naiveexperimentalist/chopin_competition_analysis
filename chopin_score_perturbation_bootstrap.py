@@ -270,23 +270,23 @@ class ScorePerturbationAnalyzer:
 
 
 class PerturbationVisualizer:
-    """Wizualizacje stabilności z perturbacją"""
-    
+    """Stability visualizations under score perturbations"""
+
     def __init__(self, analyzer: ScorePerturbationAnalyzer):
         self.analyzer = analyzer
-    
+
     def visualize_score_distributions(self, bootstrap_results: Dict[int, List[float]],
                                      save_path: str = None):
-        """Violin plots rozkładów wyników z perturbacją"""
+        """Violin plots of perturbed-score distributions"""
         actual_scores = self.analyzer.get_actual_final_scores()
-        
-        # Przygotuj dane
+
+        # Prepare data
         plot_data = []
         for _, row in actual_scores.iterrows():
             nr = row['Nr']
             name = f"{row['rank']}. {row['nazwisko']}"
             actual_score = row['final_score']
-            
+
             for score in bootstrap_results[nr]:
                 plot_data.append({
                     'participant': name,
@@ -294,59 +294,59 @@ class PerturbationVisualizer:
                     'score': score,
                     'actual_score': actual_score
                 })
-        
+
         df = pd.DataFrame(plot_data)
-        
-        # Rysuj
+
+        # Plot
         fig, ax = plt.subplots(figsize=(16, max(10, len(actual_scores) * 0.4)))
-        
-        order = [f"{r}. {n}" for r, n in 
-                zip(actual_scores['rank'], actual_scores['nazwisko'])]
-        
-        sns.violinplot(data=df, y='participant', x='score', order=order, 
-                      inner='quartile', ax=ax, palette='Set2')
-        
-        # Czerwone punkty dla rzeczywistych wyników
+
+        order = [f"{r}. {n}" for r, n in
+                 zip(actual_scores['rank'], actual_scores['nazwisko'])]
+
+        sns.violinplot(data=df, y='participant', x='score', order=order,
+                       inner='quartile', ax=ax, palette='Set2')
+
+        # Red dots for actual results
         for i, (_, row) in enumerate(actual_scores.iterrows()):
-            ax.plot(row['final_score'], i, 'ro', markersize=8, 
-                   label='Rzeczywisty wynik' if i == 0 else '')
-        
-        ax.set_xlabel('Wynik końcowy', fontsize=12)
-        ax.set_ylabel('Uczestnik (ranga. nazwisko)', fontsize=12)
-        ax.set_title('Stabilność wyniku końcowego - Perturbacja ocen\n' +
-                    f'Rozkład możliwych wyników przy zmianach ocen o {self.analyzer.perturbation_values}',
-                    fontsize=16, fontweight='bold', pad=20)
+            ax.plot(row['final_score'], i, 'ro', markersize=8,
+                    label='Actual score' if i == 0 else '')
+
+        ax.set_xlabel('Final score', fontsize=12)
+        ax.set_ylabel('Contestant (rank, surname)', fontsize=12)
+        ax.set_title('Final score stability — score perturbation\n'
+                     f'Distributions of possible scores under changes of {self.analyzer.perturbation_values}',
+                     fontsize=16, fontweight='bold', pad=20)
         ax.legend()
         ax.grid(True, alpha=0.3, axis='x')
-        
+
         plt.tight_layout()
-        
+
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches='tight')
-            print(f"Zapisano: {save_path}")
+            print(f"Saved: {save_path}")
         else:
             plt.show()
-        
+
         plt.close()
-    
+
     def visualize_confidence_intervals(self, bootstrap_results: Dict[int, List[float]],
                                       confidence: float = 0.95, save_path: str = None):
-        """Przedziały ufności dla wyników z perturbacją"""
+        """Confidence intervals for perturbed results"""
         actual_scores = self.analyzer.get_actual_final_scores()
-        
-        # Oblicz przedziały ufności
+
+        # Compute confidence intervals
         ci_data = []
         alpha = (1 - confidence) / 2
-        
+
         for _, row in actual_scores.iterrows():
             nr = row['Nr']
             scores = bootstrap_results[nr]
-            
+
             ci_low = np.percentile(scores, alpha * 100)
             ci_high = np.percentile(scores, (1 - alpha) * 100)
             ci_width = ci_high - ci_low
             std = np.std(scores)
-            
+
             ci_data.append({
                 'rank': row['rank'],
                 'participant': f"{row['imię']} {row['nazwisko']}",
@@ -356,78 +356,78 @@ class PerturbationVisualizer:
                 'ci_width': ci_width,
                 'std': std
             })
-        
+
         ci_df = pd.DataFrame(ci_data)
-        
-        # Rysuj
+
+        # Plot
         fig, axes = plt.subplots(2, 1, figsize=(16, 14))
-        
-        # 1. Error bars
+
+        # 1) Error bars
         ax1 = axes[0]
         y_pos = range(len(ci_df))
-        
-        ax1.errorbar(ci_df['actual_score'], y_pos, 
-                    xerr=[ci_df['actual_score'] - ci_df['ci_low'],
-                          ci_df['ci_high'] - ci_df['actual_score']],
-                    fmt='o', markersize=6, capsize=5, capthick=2,
-                    alpha=0.7, label=f'{confidence*100:.0f}% przedział ufności')
-        
+
+        ax1.errorbar(ci_df['actual_score'], y_pos,
+                     xerr=[ci_df['actual_score'] - ci_df['ci_low'],
+                           ci_df['ci_high'] - ci_df['actual_score']],
+                     fmt='o', markersize=6, capsize=5, capthick=2,
+                     alpha=0.7, label=f'{confidence*100:.0f}% confidence interval')
+
         ax1.set_yticks(y_pos)
-        ax1.set_yticklabels([f"{row['rank']}. {row['participant'][:30]}" 
-                            for _, row in ci_df.iterrows()], fontsize=8)
-        ax1.set_xlabel('Wynik końcowy', fontsize=12)
-        ax1.set_ylabel('Uczestnik', fontsize=12)
-        ax1.set_title(f'Przedziały ufności ({confidence*100:.0f}%) - Perturbacja ocen\n' +
-                     f'Zmiana ocen o {self.analyzer.perturbation_values}',
-                     fontsize=14, fontweight='bold')
+        ax1.set_yticklabels([f"{row['rank']}. {row['participant'][:30]}"
+                             for _, row in ci_df.iterrows()], fontsize=8)
+        ax1.set_xlabel('Final score', fontsize=12)
+        ax1.set_ylabel('Contestant', fontsize=12)
+        ax1.set_title(f'Confidence intervals ({confidence*100:.0f}%) — score perturbation\n'
+                      f'Score changes of {self.analyzer.perturbation_values}',
+                      fontsize=14, fontweight='bold')
         ax1.legend()
         ax1.grid(True, alpha=0.3, axis='x')
         ax1.invert_yaxis()
-        
-        # 2. Szerokość przedziału
+
+        # 2) Interval width
         ax2 = axes[1]
         top_unstable = ci_df.nlargest(30, 'ci_width')
         colors = plt.cm.Reds(np.linspace(0.3, 0.9, len(top_unstable)))
-        
-        ax2.barh(range(len(top_unstable)), top_unstable['ci_width'], 
-                color=colors, alpha=0.7)
+
+        ax2.barh(range(len(top_unstable)), top_unstable['ci_width'],
+                 color=colors, alpha=0.7)
         ax2.set_yticks(range(len(top_unstable)))
-        ax2.set_yticklabels([f"{row['rank']}. {row['participant'][:30]}" 
-                            for _, row in top_unstable.iterrows()], fontsize=8)
-        ax2.set_xlabel('Szerokość przedziału ufności (punkty)', fontsize=12)
-        ax2.set_ylabel('Uczestnik', fontsize=12)
-        ax2.set_title('Wrażliwość na małe zmiany w ocenach\n' +
-                     '(im szerszy przedział, tym większa wrażliwość)',
-                     fontsize=14, fontweight='bold')
+        ax2.set_yticklabels([f"{row['rank']}. {row['participant'][:30]}"
+                             for _, row in top_unstable.iterrows()], fontsize=8)
+        ax2.set_xlabel('Confidence-interval width (points)', fontsize=12)
+        ax2.set_ylabel('Contestant', fontsize=12)
+        ax2.set_title('Sensitivity to small score changes\n'
+                      '(wider intervals imply greater sensitivity)',
+                      fontsize=14, fontweight='bold')
         ax2.grid(True, alpha=0.3, axis='x')
-        
+
         plt.tight_layout()
-        
+
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches='tight')
-            print(f"Zapisano: {save_path}")
+            print(f"Saved: {save_path}")
         else:
             plt.show()
-        
+
         plt.close()
-    
+
     def visualize_ranking_stability_matrix(self, bootstrap_results: Dict[int, List[float]],
                                           save_path: str = None):
-        """Heatmapa prawdopodobieństwa pozycji w rankingu"""
+        """Heatmap of rank-position probabilities"""
         actual_scores = self.analyzer.get_actual_final_scores()
-        
-        # Oblicz ranking dla każdej iteracji
+
+        # Compute ranks for each iteration
         n_iterations = len(list(bootstrap_results.values())[0])
         n_finalists = len(actual_scores)
         ranking_matrix = np.zeros((n_finalists, n_finalists))
-        
-        print("Obliczam macierz stabilności rankingu...")
-        
+
+        print("Computing ranking stability matrix...")
+
         for iteration in range(n_iterations):
             if (iteration + 1) % 1000 == 0:
-                print(f"  Iteracja {iteration + 1}/{n_iterations}")
-            
-            # Wyniki w tej iteracji
+                print(f"  Iteration {iteration + 1}/{n_iterations}")
+
+            # Scores in this iteration
             iter_scores = []
             for _, row in actual_scores.iterrows():
                 nr = row['Nr']
@@ -435,127 +435,127 @@ class PerturbationVisualizer:
                     'nr': nr,
                     'score': bootstrap_results[nr][iteration]
                 })
-            
-            # Posortuj i przypisz rangi
+
+            # Sort and assign ranks
             iter_df = pd.DataFrame(iter_scores)
             iter_df = iter_df.sort_values('score', ascending=False).reset_index(drop=True)
             iter_df['bootstrap_rank'] = range(1, len(iter_df) + 1)
-            
-            # Zlicz wystąpienia
+
+            # Count occurrences
             for idx, (_, row) in enumerate(actual_scores.iterrows()):
                 nr = row['Nr']
                 bootstrap_rank = iter_df[iter_df['nr'] == nr]['bootstrap_rank'].iloc[0]
                 ranking_matrix[idx, bootstrap_rank - 1] += 1
-        
-        # Normalizuj do prawdopodobieństw
+
+        # Normalize to probabilities (%)
         ranking_matrix = ranking_matrix / n_iterations * 100
-        
-        # Rysuj
+
+        # Plot
         fig, ax = plt.subplots(figsize=(16, 12))
-        
-        participant_labels = [f"{row['rank']}. {row['nazwisko']}" 
-                             for _, row in actual_scores.iterrows()]
-        
+
+        participant_labels = [f"{row['rank']}. {row['nazwisko']}"
+                              for _, row in actual_scores.iterrows()]
+
         sns.heatmap(ranking_matrix, annot=True, fmt='.1f', cmap='YlOrRd',
-                   xticklabels=range(1, n_finalists + 1),
-                   yticklabels=participant_labels,
-                   cbar_kws={'label': 'Prawdopodobieństwo (%)'},
-                   ax=ax)
-        
-        ax.set_xlabel('Możliwa pozycja w rankingu', fontsize=12)
-        ax.set_ylabel('Uczestnik (rzeczywista pozycja. nazwisko)', fontsize=12)
-        ax.set_title('Macierz stabilności rankingu - Perturbacja ocen\n' +
-                    f'Prawdopodobieństwo pozycji przy zmianach ocen o {self.analyzer.perturbation_values}',
-                    fontsize=16, fontweight='bold', pad=20)
-        
+                    xticklabels=range(1, n_finalists + 1),
+                    yticklabels=participant_labels,
+                    cbar_kws={'label': 'Probability (%)'},
+                    ax=ax)
+
+        ax.set_xlabel('Possible rank position', fontsize=12)
+        ax.set_ylabel('Contestant (actual position, surname)', fontsize=12)
+        ax.set_title('Ranking stability matrix — score perturbation\n'
+                     f'Probability of each position under score changes of {self.analyzer.perturbation_values}',
+                     fontsize=16, fontweight='bold', pad=20)
+
         plt.tight_layout()
-        
+
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches='tight')
-            print(f"Zapisano: {save_path}")
+            print(f"Saved: {save_path}")
         else:
             plt.show()
-        
+
         plt.close()
-    
+
     def visualize_score_vs_uncertainty(self, bootstrap_results: Dict[int, List[float]],
                                       save_path: str = None):
-        """Scatter: wynik vs niepewność"""
+        """Scatter: final score vs uncertainty"""
         actual_scores = self.analyzer.get_actual_final_scores()
-        
+
         scatter_data = []
         for _, row in actual_scores.iterrows():
             nr = row['Nr']
             scores = bootstrap_results[nr]
             std = np.std(scores)
-            
+
             scatter_data.append({
                 'participant': f"{row['imię']} {row['nazwisko']}",
                 'rank': row['rank'],
                 'actual_score': row['final_score'],
                 'std': std
             })
-        
+
         df = pd.DataFrame(scatter_data)
-        
-        # Rysuj
+
+        # Plot
         fig, ax = plt.subplots(figsize=(14, 10))
-        
-        scatter = ax.scatter(df['actual_score'], df['std'], 
-                           s=150, alpha=0.6, c=df['rank'], 
-                           cmap='viridis_r', edgecolors='black', linewidth=0.5)
-        
-        # Annotacje
-        top_10 = df[df['rank'] <= 10]
+
+        scatter = ax.scatter(df['actual_score'], df['std'],
+                             s=150, alpha=0.6, c=df['rank'],
+                             cmap='viridis_r', edgecolors='black', linewidth=0.5)
+
+        # Annotations
+        top_13 = df[df['rank'] <= 13]
         most_unstable = df.nlargest(5, 'std')
-        to_annotate = pd.concat([top_10, most_unstable]).drop_duplicates()
-        
+        to_annotate = pd.concat([top_13, most_unstable]).drop_duplicates()
+
         for _, row in to_annotate.iterrows():
-            ax.annotate(f"{row['rank']}. {row['participant'].split()[-1]}", 
-                       (row['actual_score'], row['std']),
-                       fontsize=8, alpha=0.8, 
-                       xytext=(5, 5), textcoords='offset points')
-        
-        ax.set_xlabel('Rzeczywisty wynik końcowy', fontsize=12)
-        ax.set_ylabel('Odchylenie standardowe (wrażliwość)', fontsize=12)
-        ax.set_title('Wynik vs Wrażliwość na perturbacje\n' +
-                    f'Zmiany ocen o {self.analyzer.perturbation_values}',
-                    fontsize=16, fontweight='bold', pad=20)
+            ax.annotate(f"{row['rank']}. {row['participant'].split()[-1]}",
+                        (row['actual_score'], row['std']),
+                        fontsize=8, alpha=0.8,
+                        xytext=(5, 5), textcoords='offset points')
+
+        ax.set_xlabel('Actual final score', fontsize=12)
+        ax.set_ylabel('Standard deviation (uncertainty)', fontsize=12)
+        ax.set_title('Score vs sensitivity to perturbations\n'
+                     f'Score changes of {self.analyzer.perturbation_values}',
+                     fontsize=16, fontweight='bold', pad=20)
         ax.grid(True, alpha=0.3)
-        
-        plt.colorbar(scatter, ax=ax, label='Pozycja w rankingu')
-        
+
+        plt.colorbar(scatter, ax=ax, label='Rank position')
+
         plt.tight_layout()
-        
+
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches='tight')
-            print(f"Zapisano: {save_path}")
+            print(f"Saved: {save_path}")
         else:
             plt.show()
-        
+
         plt.close()
-    
-    def visualize_comparison_with_resampling(self, 
+
+    def visualize_comparison_with_resampling(self,
                                             perturbation_results: Dict[int, List[float]],
                                             resampling_results: Dict[int, List[float]] = None,
                                             save_path: str = None):
         """
-        Porównanie stabilności: perturbacja vs resampling sędziów
-        (jeśli dostępne są oba wyniki)
+        Stability comparison: perturbation vs jury resampling
+        (if both results are available)
         """
         if resampling_results is None:
-            print("Brak wyników z resamplingu - pomijam porównanie")
+            print("No resampling results — skipping comparison")
             return
-        
+
         actual_scores = self.analyzer.get_actual_final_scores()
-        
+
         comparison_data = []
         for _, row in actual_scores.iterrows():
             nr = row['Nr']
-            
+
             pert_scores = perturbation_results[nr]
             resamp_scores = resampling_results[nr]
-            
+
             comparison_data.append({
                 'rank': row['rank'],
                 'participant': f"{row['imię']} {row['nazwisko']}",
@@ -564,67 +564,67 @@ class PerturbationVisualizer:
                 'perturbation_ci_width': np.percentile(pert_scores, 97.5) - np.percentile(pert_scores, 2.5),
                 'resampling_ci_width': np.percentile(resamp_scores, 97.5) - np.percentile(resamp_scores, 2.5)
             })
-        
+
         comp_df = pd.DataFrame(comparison_data)
-        
-        # Rysuj
+
+        # Plot
         fig, axes = plt.subplots(1, 2, figsize=(18, 10))
-        
-        # 1. Scatter: perturbacja vs resampling (SD)
+
+        # 1) Scatter: perturbation vs resampling (SD)
         ax1 = axes[0]
         scatter = ax1.scatter(comp_df['resampling_std'], comp_df['perturbation_std'],
-                            s=150, alpha=0.6, c=comp_df['rank'], 
-                            cmap='viridis_r', edgecolors='black', linewidth=0.5)
-        
-        # Linia 1:1
+                              s=150, alpha=0.6, c=comp_df['rank'],
+                              cmap='viridis_r', edgecolors='black', linewidth=0.5)
+
+        # 1:1 line
         max_val = max(comp_df['resampling_std'].max(), comp_df['perturbation_std'].max())
-        ax1.plot([0, max_val], [0, max_val], 'r--', alpha=0.5, label='y=x')
-        
-        # Annotacje dla top 5
+        ax1.plot([0, max_val], [0, max_val], 'r--', alpha=0.5, label='y = x')
+
+        # Annotate top 5
         for _, row in comp_df.head(5).iterrows():
-            ax1.annotate(f"{row['rank']}", 
-                        (row['resampling_std'], row['perturbation_std']),
-                        fontsize=9, fontweight='bold')
-        
-        ax1.set_xlabel('SD - Resampling sędziów', fontsize=12)
-        ax1.set_ylabel('SD - Perturbacja ocen', fontsize=12)
-        ax1.set_title('Porównanie wrażliwości\nOdchylenie standardowe', 
-                     fontsize=13, fontweight='bold')
+            ax1.annotate(f"{row['rank']}",
+                         (row['resampling_std'], row['perturbation_std']),
+                         fontsize=9, fontweight='bold')
+
+        ax1.set_xlabel('SD — jury resampling', fontsize=12)
+        ax1.set_ylabel('SD — score perturbation', fontsize=12)
+        ax1.set_title('Sensitivity comparison\nStandard deviation',
+                      fontsize=13, fontweight='bold')
         ax1.legend()
         ax1.grid(True, alpha=0.3)
-        
-        # 2. Bar plot: szerokość CI
+
+        # 2) Bar plot: CI width
         ax2 = axes[1]
-        
+
         top_10 = comp_df.head(10)
         x = np.arange(len(top_10))
         width = 0.35
-        
+
         bars1 = ax2.bar(x - width/2, top_10['resampling_ci_width'], width,
-                       label='Resampling sędziów', alpha=0.7, color='steelblue')
+                        label='Jury resampling', alpha=0.7, color='steelblue')
         bars2 = ax2.bar(x + width/2, top_10['perturbation_ci_width'], width,
-                       label='Perturbacja ocen', alpha=0.7, color='coral')
-        
-        ax2.set_xlabel('Uczestnik', fontsize=12)
-        ax2.set_ylabel('Szerokość 95% CI (punkty)', fontsize=12)
-        ax2.set_title('Porównanie wrażliwości - Top 10\nSzerokość przedziału ufności', 
-                     fontsize=13, fontweight='bold')
+                        label='Score perturbation', alpha=0.7, color='coral')
+
+        ax2.set_xlabel('Contestant', fontsize=12)
+        ax2.set_ylabel('95% CI width (points)', fontsize=12)
+        ax2.set_title('Sensitivity comparison — Top 10\nConfidence-interval width',
+                      fontsize=13, fontweight='bold')
         ax2.set_xticks(x)
         ax2.set_xticklabels([f"{row['rank']}." for _, row in top_10.iterrows()])
         ax2.legend()
         ax2.grid(True, alpha=0.3, axis='y')
-        
-        plt.colorbar(scatter, ax=axes, label='Pozycja w rankingu')
+
+        plt.colorbar(scatter, ax=axes, label='Rank position')
         plt.tight_layout()
-        
+
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches='tight')
-            print(f"Zapisano: {save_path}")
+            print(f"Saved: {save_path}")
         else:
             plt.show()
-        
+
         plt.close()
-    
+
     def create_full_report(self, bootstrap_results: Dict[int, List[float]],
                           resampling_results: Dict[int, List[float]] = None,
                           output_dir: str = 'perturbation_stability'):

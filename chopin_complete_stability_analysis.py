@@ -289,22 +289,22 @@ class StabilityAnalyzer:
 
 
 class StabilityVisualizer:
-    """Wizualizacje stabilności"""
-    
+    """Stability visualizations"""
+
     def __init__(self, analyzer: StabilityAnalyzer):
         self.analyzer = analyzer
-    
+
     def plot_violin_distributions(self, bootstrap_results: Dict[int, List[float]],
                                   save_path: str = None):
-        """Violin plots rozkładów wyników"""
+        """Violin plots of score distributions"""
         actual_scores = self.analyzer.get_actual_final_scores()
-        
+
         plot_data = []
         for _, row in actual_scores.iterrows():
             nr = row['Nr']
             name = f"{row['rank']}. {row['nazwisko']}"
             actual_score = row['final_score']
-            
+
             for score in bootstrap_results[nr]:
                 plot_data.append({
                     'participant': name,
@@ -312,52 +312,52 @@ class StabilityVisualizer:
                     'score': score,
                     'actual_score': actual_score
                 })
-        
+
         df = pd.DataFrame(plot_data)
-        
+
         fig, ax = plt.subplots(figsize=(16, max(10, len(actual_scores) * 0.4)))
-        
-        order = [f"{r}. {n}" for r, n in 
-                zip(actual_scores['rank'], actual_scores['nazwisko'])]
-        
-        sns.violinplot(data=df, y='participant', x='score', order=order, 
-                      inner='quartile', ax=ax, palette='Set2')
-        
+
+        order = [f"{r}. {n}" for r, n in
+                 zip(actual_scores['rank'], actual_scores['nazwisko'])]
+
+        sns.violinplot(data=df, y='participant', x='score', order=order,
+                       inner='quartile', ax=ax, palette='Set2')
+
         for i, (_, row) in enumerate(actual_scores.iterrows()):
-            ax.plot(row['final_score'], i, 'ro', markersize=8, 
-                   label='Rzeczywisty wynik' if i == 0 else '')
-        
-        ax.set_xlabel('Wynik końcowy', fontsize=12)
-        ax.set_ylabel('Uczestnik (ranga. nazwisko)', fontsize=12)
-        ax.set_title('Stabilność wyniku końcowego - Finaliści\n' +
-                    'Rozkład możliwych wyników z bootstrapu',
-                    fontsize=16, fontweight='bold', pad=20)
+            ax.plot(row['final_score'], i, 'ro', markersize=8,
+                    label='Actual score' if i == 0 else '')
+
+        ax.set_xlabel('Final score', fontsize=12)
+        ax.set_ylabel('Contestant (rank, surname)', fontsize=12)
+        ax.set_title('Final score stability — finalists\n'
+                     'Distributions of possible scores (bootstrap)',
+                     fontsize=16, fontweight='bold', pad=20)
         ax.legend()
         ax.grid(True, alpha=0.3, axis='x')
-        
+
         plt.tight_layout()
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches='tight')
-            print(f"Zapisano: {save_path}")
+            print(f"Saved: {save_path}")
         plt.close()
-    
+
     def plot_confidence_intervals(self, bootstrap_results: Dict[int, List[float]],
                                   confidence: float = 0.95, save_path: str = None):
-        """Przedziały ufności dla wyników"""
+        """Confidence intervals for final scores"""
         actual_scores = self.analyzer.get_actual_final_scores()
-        
+
         ci_data = []
         alpha = (1 - confidence) / 2
-        
+
         for _, row in actual_scores.iterrows():
             nr = row['Nr']
             scores = bootstrap_results[nr]
-            
+
             ci_low = np.percentile(scores, alpha * 100)
             ci_high = np.percentile(scores, (1 - alpha) * 100)
             ci_width = ci_high - ci_low
             std = np.std(scores)
-            
+
             ci_data.append({
                 'rank': row['rank'],
                 'participant': f"{row['imię']} {row['nazwisko']}",
@@ -367,157 +367,153 @@ class StabilityVisualizer:
                 'ci_width': ci_width,
                 'std': std
             })
-        
+
         ci_df = pd.DataFrame(ci_data)
-        
+
         fig, axes = plt.subplots(2, 1, figsize=(16, 14))
-        
-        # Przedziały ufności
+
+        # Confidence intervals
         ax1 = axes[0]
         y_pos = range(len(ci_df))
-        # ax1.errorbar(ci_df['actual_score'], y_pos,
-        #             xerr=[ci_df['actual_score'] - ci_df['ci_low'],
-        #                   ci_df['ci_high'] - ci_df['actual_score']],
-        #             fmt='o', markersize=6, capsize=5, capthick=2,
-        #             alpha=0.7, label=f'{confidence*100:.0f}% przedział ufności')
-        
+        # If you re-enable errorbars, update the label below:
+        # ax1.errorbar(..., label=f'{confidence*100:.0f}% confidence interval')
+
         ax1.set_yticks(y_pos)
-        ax1.set_yticklabels([f"{row['rank']}. {row['participant'][:30]}" 
-                            for _, row in ci_df.iterrows()], fontsize=8)
-        ax1.set_xlabel('Wynik końcowy', fontsize=12)
-        ax1.set_ylabel('Uczestnik', fontsize=12)
-        ax1.set_title(f'Przedziały ufności ({confidence*100:.0f}%) dla wyniku końcowego',
-                     fontsize=14, fontweight='bold')
+        ax1.set_yticklabels([f"{row['rank']}. {row['participant'][:30]}"
+                             for _, row in ci_df.iterrows()], fontsize=8)
+        ax1.set_xlabel('Final score', fontsize=12)
+        ax1.set_ylabel('Contestant', fontsize=12)
+        ax1.set_title(f'Confidence intervals ({confidence*100:.0f}%) for final score',
+                      fontsize=14, fontweight='bold')
         ax1.legend()
         ax1.grid(True, alpha=0.3, axis='x')
         ax1.invert_yaxis()
-        
-        # Szerokość przedziałów
+
+        # Interval widths
         ax2 = axes[1]
         df_sorted = ci_df.sort_values('ci_width', ascending=True)
         colors2 = plt.cm.Reds(np.linspace(0.3, 0.9, len(df_sorted)))
-        
+
         bars = ax2.barh(range(len(df_sorted)), df_sorted['ci_width'],
-                       color=colors2, alpha=0.7)
+                        color=colors2, alpha=0.7)
         ax2.set_yticks(range(len(df_sorted)))
-        ax2.set_yticklabels([f"{row['rank']}. {row['participant'][:30]}" 
-                            for _, row in df_sorted.iterrows()], fontsize=8)
-        ax2.set_xlabel('Szerokość przedziału ufności (punkty)', fontsize=12)
-        ax2.set_ylabel('Uczestnik', fontsize=12)
-        ax2.set_title('Najbardziej niestabilne wyniki',
-                     fontsize=14, fontweight='bold')
+        ax2.set_yticklabels([f"{row['rank']}. {row['participant'][:30]}"
+                             for _, row in df_sorted.iterrows()], fontsize=8)
+        ax2.set_xlabel('Confidence-interval width (points)', fontsize=12)
+        ax2.set_ylabel('Contestant', fontsize=12)
+        ax2.set_title('Most unstable results (widest intervals)',
+                      fontsize=14, fontweight='bold')
         ax2.grid(True, alpha=0.3, axis='x')
-        
+
         plt.tight_layout()
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches='tight')
-            print(f"Zapisano: {save_path}")
+            print(f"Saved: {save_path}")
         plt.close()
-    
+
     def plot_combined_stability_analysis(self, bootstrap_results: Dict[int, List[float]],
                                          save_path: str = None):
-        """Połączona analiza: rank changes + stability scores"""
+        """Combined analysis: rank changes + stability scores"""
         rank_changes_df = self.analyzer.calculate_rank_changes_data(bootstrap_results)
         stability_df = self.analyzer.calculate_stability_scores(bootstrap_results)
-        
+
         fig, axes = plt.subplots(2, 2, figsize=(18, 14))
-        
-        # [0,0] Zakres pozycji
+
+        # [0,0] Range of possible ranks
         ax1 = axes[0, 0]
         y_pos = range(len(rank_changes_df))
-        
+
         for i, row in rank_changes_df.iterrows():
-            ax1.plot([row['best_rank'], row['worst_rank']], 
-                    [i, i], 'o-', linewidth=2, markersize=4, alpha=0.6)
+            ax1.plot([row['best_rank'], row['worst_rank']],
+                     [i, i], 'o-', linewidth=2, markersize=4, alpha=0.6)
             ax1.plot(row['actual_rank'], i, 'ro', markersize=8, zorder=10)
-        
+
         ax1.set_yticks(y_pos)
-        ax1.set_yticklabels([f"{row['actual_rank']}. {row['participant'][:25]}" 
+        ax1.set_yticklabels([f"{row['actual_rank']}. {row['participant'][:25]}"
                              for _, row in rank_changes_df.iterrows()], fontsize=9)
-        ax1.set_xlabel('Pozycja w rankingu', fontsize=12)
-        ax1.set_ylabel('Uczestnik', fontsize=12)
-        ax1.set_title('Możliwe zmiany pozycji w rankingu\n' +
-                     '90% przedział możliwych pozycji',
-                     fontsize=13, fontweight='bold')
+        ax1.set_xlabel('Rank position', fontsize=12)
+        ax1.set_ylabel('Contestant', fontsize=12)
+        ax1.set_title('Possible rank changes\n90% interval of possible positions',
+                      fontsize=13, fontweight='bold')
         ax1.invert_xaxis()
         ax1.grid(True, alpha=0.3, axis='x')
-        
-        # [0,1] Rozpiętość pozycji
+
+        # [0,1] Range size
         ax2 = axes[0, 1]
         df_sorted = rank_changes_df.sort_values('rank_range', ascending=True)
         colors2 = plt.cm.Reds(np.linspace(0.3, 0.9, len(df_sorted)))
-        
+
         ax2.barh(range(len(df_sorted)), df_sorted['rank_range'],
-                color=colors2, alpha=0.7)
+                 color=colors2, alpha=0.7)
         ax2.set_yticks(range(len(df_sorted)))
-        ax2.set_yticklabels([f"{row['actual_rank']}. {row['participant'][:25]}" 
-                            for _, row in df_sorted.iterrows()], fontsize=9)
-        ax2.set_xlabel('Rozpiętość możliwych pozycji', fontsize=12)
-        ax2.set_ylabel('Uczestnik', fontsize=12)
-        ax2.set_title('Niestabilność pozycji w rankingu',
-                     fontsize=13, fontweight='bold')
+        ax2.set_yticklabels([f"{row['actual_rank']}. {row['participant'][:25]}"
+                             for _, row in df_sorted.iterrows()], fontsize=9)
+        ax2.set_xlabel('Range of possible ranks', fontsize=12)
+        ax2.set_ylabel('Contestant', fontsize=12)
+        ax2.set_title('Instability of rank position',
+                      fontsize=13, fontweight='bold')
         ax2.grid(True, alpha=0.3, axis='x')
-        
-        # [1,0] Stability score vs pozycja
+
+        # [1,0] Stability score vs rank
         ax3 = axes[1, 0]
         scatter = ax3.scatter(stability_df['rank'], stability_df['stability_score'],
-                            s=120, alpha=0.6, c=stability_df['stability_score'],
-                            cmap='RdYlGn', edgecolors='black', linewidth=0.5)
-        
+                              s=120, alpha=0.6, c=stability_df['stability_score'],
+                              cmap='RdYlGn', edgecolors='black', linewidth=0.5)
+
         for _, row in stability_df.iterrows():
-            ax3.annotate(f"{row['rank']}", 
-                        (row['rank'], row['stability_score']),
-                        fontsize=9, alpha=0.8)
-        
-        ax3.set_xlabel('Pozycja w rankingu', fontsize=12)
-        ax3.set_ylabel('Stability Score (0-100)', fontsize=12)
-        ax3.set_title('Stability Score vs Pozycja\n100 = najbardziej stabilny',
-                     fontsize=13, fontweight='bold')
+            ax3.annotate(f"{row['rank']}",
+                         (row['rank'], row['stability_score']),
+                         fontsize=9, alpha=0.8)
+
+        ax3.set_xlabel('Rank position', fontsize=12)
+        ax3.set_ylabel('Stability score (0–100)', fontsize=12)
+        ax3.set_title('Stability score vs rank\n100 = most stable',
+                      fontsize=13, fontweight='bold')
         ax3.grid(True, alpha=0.3)
-        plt.colorbar(scatter, ax=ax3, label='Stability Score')
-        
-        # [1,1] Ranking według stabilności
+        plt.colorbar(scatter, ax=ax3, label='Stability score')
+
+        # [1,1] Ranking by stability
         ax4 = axes[1, 1]
         top_stable = stability_df.sort_values('stability_score', ascending=True)
         colors4 = plt.cm.Greens(np.linspace(0.3, 0.9, len(top_stable)))
-        
+
         ax4.barh(range(len(top_stable)), top_stable['stability_score'],
-                color=colors4, alpha=0.7)
+                 color=colors4, alpha=0.7)
         ax4.set_yticks(range(len(top_stable)))
-        ax4.set_yticklabels([f"{row['rank']}. {row['participant'][:25]}" 
-                            for _, row in top_stable.iterrows()], fontsize=9)
-        ax4.set_xlabel('Stability Score', fontsize=12)
-        ax4.set_ylabel('Uczestnik', fontsize=12)
-        ax4.set_title('Ranking według stabilności wyniku',
-                     fontsize=13, fontweight='bold')
+        ax4.set_yticklabels([f"{row['rank']}. {row['participant'][:25]}"
+                             for _, row in top_stable.iterrows()], fontsize=9)
+        ax4.set_xlabel('Stability score', fontsize=12)
+        ax4.set_ylabel('Contestant', fontsize=12)
+        ax4.set_title('Ranking by stability score',
+                      fontsize=13, fontweight='bold')
         ax4.grid(True, alpha=0.3, axis='x')
-        
-        plt.suptitle('Analiza stabilności wyniku końcowego - Finaliści',
-                    fontsize=16, fontweight='bold', y=0.995)
+
+        plt.suptitle('Stability analysis of final results — finalists',
+                     fontsize=16, fontweight='bold', y=0.995)
         plt.tight_layout()
-        
+
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches='tight')
-            print(f"Zapisano: {save_path}")
+            print(f"Saved: {save_path}")
         plt.close()
-        
+
         return rank_changes_df, stability_df
-    
+
     def plot_overlapping_intervals(self, bootstrap_results: Dict[int, List[float]],
                                    confidence: float = 0.95, save_path: str = None):
-        """Nakładające się przedziały ufności"""
+        """Overlapping confidence intervals"""
         actual_scores = self.analyzer.get_actual_final_scores()
-        
+
         alpha = (1 - confidence) / 2
         ci_data = []
-        
+
         for _, row in actual_scores.iterrows():
             nr = row['Nr']
             scores = bootstrap_results[nr]
-            
+
             ci_low = np.percentile(scores, alpha * 100)
             ci_high = np.percentile(scores, (1 - alpha) * 100)
-            
+
             ci_data.append({
                 'rank': row['rank'],
                 'participant': f"{row['rank']}. {row['nazwisko']}",
@@ -525,18 +521,18 @@ class StabilityVisualizer:
                 'ci_low': ci_low,
                 'ci_high': ci_high
             })
-        
+
         df = pd.DataFrame(ci_data)
-        
+
         fig, ax = plt.subplots(figsize=(14, max(10, len(df) * 0.35)))
-        
+
         y_pos = range(len(df))
-        
+
         for i, row in df.iterrows():
-            ax.plot([row['ci_low'], row['ci_high']], [i, i], 
-                   'o-', linewidth=3, markersize=6, alpha=0.7)
+            ax.plot([row['ci_low'], row['ci_high']], [i, i],
+                    'o-', linewidth=3, markersize=6, alpha=0.7)
             ax.plot(row['actual_score'], i, 'ro', markersize=10, zorder=10)
-        
+
         overlaps = []
         for i in range(len(df)):
             for j in range(i + 1, len(df)):
@@ -544,23 +540,23 @@ class StabilityVisualizer:
                     df.iloc[j]['ci_low'] <= df.iloc[i]['ci_high']):
                     overlaps.append((i, j))
                     ax.plot([df.iloc[i]['actual_score'], df.iloc[j]['actual_score']],
-                           [i, j], 'gray', linewidth=0.5, alpha=0.3, zorder=1)
-        
+                            [i, j], 'gray', linewidth=0.5, alpha=0.3, zorder=1)
+
         ax.set_yticks(y_pos)
         ax.set_yticklabels(df['participant'], fontsize=9)
-        ax.set_xlabel('Wynik końcowy', fontsize=12)
-        ax.set_ylabel('Uczestnik', fontsize=12)
-        ax.set_title(f'Nakładające się przedziały ufności ({confidence*100:.0f}%) - Finaliści\n' +
-                    f'Znaleziono {len(overlaps)} par z nakładającymi się przedziałami',
-                    fontsize=14, fontweight='bold', pad=20)
+        ax.set_xlabel('Final score', fontsize=12)
+        ax.set_ylabel('Contestant', fontsize=12)
+        ax.set_title(f'Overlapping confidence intervals ({confidence*100:.0f}%) — finalists\n'
+                     f'Found {len(overlaps)} statistically indistinguishable pairs',
+                     fontsize=14, fontweight='bold', pad=20)
         ax.grid(True, alpha=0.3, axis='x')
-        
+
         plt.tight_layout()
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches='tight')
-            print(f"Zapisano: {save_path}")
+            print(f"Saved: {save_path}")
         plt.close()
-        
+
         overlap_info = []
         for i, j in overlaps:
             overlap_info.append({
@@ -570,7 +566,7 @@ class StabilityVisualizer:
                 'rank2': df.iloc[j]['rank'],
                 'rank_diff': abs(df.iloc[i]['rank'] - df.iloc[j]['rank'])
             })
-        
+
         return pd.DataFrame(overlap_info)
 
 

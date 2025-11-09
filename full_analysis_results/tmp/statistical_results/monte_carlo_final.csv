@@ -1,12 +1,12 @@
 Nr,imię,nazwisko,participant_name,original_rank,mean_rank_mc,std_rank_mc,min_rank_mc,max_rank_mc,rank_range_mc,rank_95_lower,rank_95_upper
 29,Kevin,Chen,Kevin Chen,1,1.0,0.0,1,1,0,1,1
-62,Eric,Lu,Eric Lu,2,2.026,0.15913516267626085,2,3,1,2,3
-24,Piotr,Alexewicz,Piotr Alexewicz,3,3.147,0.41399396130861615,2,4,2,3,4
-64,Tianyao,Lyu,Tianyao Lyu,4,3.828,0.38783501646963225,2,5,3,3,4
-51,Shiori,Kuwahara,Shiori Kuwahara,5,5.41,0.49183330509431744,5,6,1,5,6
-73,Vincent,Ong,Vincent Ong,6,5.589,0.4940435203501813,4,6,2,5,6
-47,David,Khrikuli,David Khrikuli,7,7.073,0.26013650262890825,7,8,1,7,8
-5,Zitong,Wang,Zitong Wang,8,7.931,0.26877313853880563,7,9,2,7,8
-15,William,Yang,William Yang,9,8.996,0.063118935352238,8,9,1,9,9
+62,Eric,Lu,Eric Lu,2,2.016,0.125475097130865,2,3,1,2,2
+24,Piotr,Alexewicz,Piotr Alexewicz,3,3.183,0.42132054305481,2,4,2,3,4
+64,Tianyao,Lyu,Tianyao Lyu,4,3.801,0.4042264216995222,2,4,2,3,4
+51,Shiori,Kuwahara,Shiori Kuwahara,5,5.457,0.4981475684975286,5,6,1,5,6
+73,Vincent,Ong,Vincent Ong,6,5.543,0.4981475684975286,5,6,1,5,6
+47,David,Khrikuli,David Khrikuli,7,7.057,0.2318426190328258,7,8,1,7,8
+5,Zitong,Wang,Zitong Wang,8,7.943,0.2318426190328258,7,8,1,7,8
+15,William,Yang,William Yang,9,9.0,0.0,9,9,0,9,9
 81,Miyu,Shindo,Miyu Shindo,10,10.0,0.0,10,10,0,10,10
 57,Tianyou,Li,Tianyou Li,11,11.0,0.0,11,11,0,11,11

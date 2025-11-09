@@ -1,26 +1,14 @@
-"""
-Analiza klastrowa uczestników i sędziów przez wszystkie etapy konkursu Chopinowskiego
-
-Śledzi uczestników przez wszystkie rundy i identyfikuje:
-- Klastry sędziów na podstawie ich wzorców oceniania przez cały konkurs
-- Klastry uczestników na podstawie profili ocen ze wszystkich etapów
-- Dynamikę ocen i wzorce progresji
-"""
 
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
-from scipy.spatial.distance import pdist, squareform
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
-from sklearn.decomposition import PCA
-from sklearn.metrics import silhouette_score
 import warnings
 warnings.filterwarnings('ignore')
 
-# Konfiguracja wizualizacji
 plt.style.use('seaborn-v0_8-darkgrid')
 sns.set_palette("husl")
 
@@ -40,8 +28,7 @@ class MultiStageClusteringAnalyzer:
         self.load_data()
         
     def load_data(self):
-        """Wczytuje dane ze wszystkich etapów"""
-        print("Wczytuję dane ze wszystkich etapów...")
+        print("Loading data from all stages...")
         
         for stage, filepath in self.data_files.items():
             try:
@@ -49,9 +36,8 @@ class MultiStageClusteringAnalyzer:
                 # Usuń spacje z nazw kolumn
                 df.columns = df.columns.str.strip()
                 self.stages_data[stage] = df
-                print(f"  {stage}: {len(df)} uczestników")
+                print(f"  {stage}: {len(df)} contestants")
                 
-                # Pobierz kolumny sędziów (pomijając Nr, imię, nazwisko)
                 if not self.judge_columns:
                     self.judge_columns = [col for col in df.columns 
                                          if col not in ['Nr', 'imię', 'nazwisko']]

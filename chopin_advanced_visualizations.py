@@ -585,8 +585,7 @@ def visualize_judge_consistency(analyzer, save_path='judge_consistency.png'):
     ax4.legend()
     ax4.grid(True, alpha=0.3)
     
-    plt.suptitle('Consistency of judges across stages\n' +
-                '(how stable the scores are for the same contestants)',
+    plt.suptitle('Consistency of judges across stages',
                 fontsize=16, fontweight='bold', y=1.00)
     
     plt.tight_layout()

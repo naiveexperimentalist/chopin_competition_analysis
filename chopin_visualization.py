@@ -292,7 +292,7 @@ class ChopinVisualization:
             strong_alliances = alliances[alliances['correlation'] > 0.7]
 
             # Prosty wykres sieciowy
-            ax3.set_title('Silne sojusze sędziowskie (korelacja > 0.7)', fontsize=14, fontweight='bold')
+            ax3.set_title('Strong judge alliances (correlation > 0.7)', fontsize=14, fontweight='bold')
 
             # Utwórz pozycje węzłów w okręgu
             n_judges = len(self.judge_columns)
@@ -343,7 +343,7 @@ class ChopinVisualization:
                 ])
 
             table = ax4.table(cellText=table_data,
-                              colLabels=['Judge 1', 'Judge 2', 'Correlation', 'Siła'],
+                              colLabels=['Judge 1', 'Judge 2', 'Correlation', 'Strength'],
                               cellLoc='center',
                               loc='center',
                               colWidths=[0.25, 0.25, 0.25, 0.25])
@@ -456,7 +456,7 @@ class ChopinVisualization:
         stage_labels = ['I→II', 'II→III', 'III→F']
 
         fig = plt.figure(figsize=(18, 12))
-        gs = fig.add_gridspec(2, 2, hspace=0.25, wspace=0.25, height_ratios=[1, 1], width_ratios=[7, 3])
+        gs = fig.add_gridspec(3, 2, hspace=0.25, wspace=0.25, height_ratios=[0.1, 1, 1], width_ratios=[7, 3])
 
         # === LEWA CZĘŚĆ: Szczegółowa tabela (pionowy layout, szeroka na obie kolumny) ===
         ax_table = fig.add_subplot(gs[:, 0])  # Spans both rows in column 0
@@ -490,7 +490,7 @@ class ChopinVisualization:
 
         fig.subplots_adjust(top=0.95)
         table = ax_table.table(cellText=table_data,
-                               colLabels=['Sędzia'] + stage_labels,
+                               colLabels=['Judge'] + stage_labels,
                                cellLoc='left',
                                bbox=[0.0, 0.0, 1.0, 0.85],
                                colWidths=[0.16, 0.28, 0.28, 0.28])
@@ -531,7 +531,7 @@ class ChopinVisualization:
                       fontsize=10, style='italic', color='#555')
 
         # === DOLNY LEWY: Wykres całkowitego wpływu ===
-        ax3 = fig.add_subplot(gs[0, 1])
+        ax3 = fig.add_subplot(gs[1, 1])
 
         lost_data = []
         gained_data = []
@@ -558,7 +558,7 @@ class ChopinVisualization:
                      va='center', fontsize=9, fontweight='bold')
 
         # === DOLNY PRAWY: Wszyscy dotknięci uczestnicy z podziałem na ↑ i ↓ ===
-        ax4 = fig.add_subplot(gs[1, 1])
+        ax4 = fig.add_subplot(gs[2, 1])
         ax4.axis('off')
 
         # Zbierz wszystkich dotkniętych uczestników z podziałem
@@ -872,9 +872,9 @@ class ChopinVisualization:
             ax1.annotate(f'{score:.2f}', (i, score), textcoords="offset points", 
                        xytext=(0,10), ha='center', fontsize=10, fontweight='bold')
         
-        ax1.set_xlabel('Etap', fontsize=12)
-        ax1.set_ylabel('Wynik (po korekcie)', fontsize=12)
-        ax1.set_title(f'Progresja wyników: {participant_name} (Nr {participant_nr})', 
+        ax1.set_xlabel('Stage', fontsize=12)
+        ax1.set_ylabel('Score (corrected))', fontsize=12)
+        ax1.set_title(f'Score progression: {participant_name} (Nr {participant_nr})',
                      fontsize=14, fontweight='bold')
         ax1.grid(True, alpha=0.3)
         
@@ -905,7 +905,7 @@ class ChopinVisualization:
         
         ax2.set_xlabel('Stage', fontsize=12)
         ax2.set_ylabel('Score', fontsize=12)
-        ax2.set_title('Oceny od poszczególnych sędziów', fontsize=14, fontweight='bold')
+        ax2.set_title('Scores by each judge', fontsize=14, fontweight='bold')
         ax2.set_xticks(x)
         ax2.set_xticklabels(stage_labels)
         ax2.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=8)
@@ -930,9 +930,9 @@ class ChopinVisualization:
                 ax3.annotate(f'{int(rank)}', (i, rank), textcoords="offset points", 
                            xytext=(0,-10), ha='center', fontsize=10, fontweight='bold')
             
-            ax3.set_xlabel('Etap (skumulowany)', fontsize=12)
-            ax3.set_ylabel('Pozycja w rankingu', fontsize=12)
-            ax3.set_title('Pozycja w rankingu skumulowanym', fontsize=14, fontweight='bold')
+            ax3.set_xlabel('Stage (cumulative)', fontsize=12)
+            ax3.set_ylabel('Rank position', fontsize=12)
+            ax3.set_title('Position in cumulative ranking', fontsize=14, fontweight='bold')
             ax3.grid(True, alpha=0.3)
         
         # 4. Statystyki
@@ -954,25 +954,25 @@ class ChopinVisualization:
         
         if all_scores:
             stats_text = f"""
-            Statystyki uczestnika: {participant_name}
+            Contestant statistics: {participant_name}
             
-            Liczba etapów: {len(stages)}
+            Number of stages: {len(stages)}
             
-            Średnia wszystkich ocen: {np.mean(all_scores):.2f}
-            Mediana ocen: {np.median(all_scores):.2f}
-            Odchylenie standardowe: {np.std(all_scores):.2f}
-            Min ocena: {min(all_scores):.0f}
-            Max ocena: {max(all_scores):.0f}
-            Rozpiętość: {max(all_scores) - min(all_scores):.0f}
+            Mean score: {np.mean(all_scores):.2f}
+            Median score: {np.median(all_scores):.2f}
+            Standard deviation: {np.std(all_scores):.2f}
+            Min score: {min(all_scores):.0f}
+            Max score: {max(all_scores):.0f}
+            Range: {max(all_scores) - min(all_scores):.0f}
             
-            Łączna liczba ocen: {len(all_scores)}
+            Total number of scores: {len(all_scores)}
             """
             
             ax4.text(0.1, 0.9, stats_text, transform=ax4.transAxes, 
                     fontsize=12, verticalalignment='top',
                     bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
         
-        plt.suptitle(f'Analiza przebiegu konkursu: {participant_name}', 
+        plt.suptitle(f'Competition journey analysis: {participant_name}',
                     fontsize=16, fontweight='bold', y=1.02)
         plt.tight_layout()
         
