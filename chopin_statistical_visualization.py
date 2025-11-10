@@ -1,14 +1,13 @@
-"""
-Moduł do wizualizacji zaawansowanych analiz statystycznych i clusteringowych
-"""
+"""\nStatistical & clustering visualizations.
+
+Generates heatmaps and summary figures for score variability, outliers,
+bootstrap/MCMC stability, judge-pair agreements, clustering and PCA.\n"""
 
 import matplotlib
 matplotlib.use('Agg')
-import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from scipy.cluster.hierarchy import dendrogram
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -17,9 +16,7 @@ sns.set_palette("husl")
 
 
 class ChopinStatisticalVisualization:
-    """Wizualizacje dla analiz statystycznych i clusteringowych"""
-    
-    def __init__(self, processor, controversy_analyzer=None, 
+    def __init__(self, processor, controversy_analyzer=None,
                  statistical_analyzer=None, clustering_analyzer=None):
         self.processor = processor
         self.controversy_analyzer = controversy_analyzer
@@ -27,31 +24,26 @@ class ChopinStatisticalVisualization:
         self.clustering_analyzer = clustering_analyzer
     
     def visualize_controversy_heatmap(self, stage: str = 'final', save_path: str = None):
-        """
-        Heatmapa zróżnicowania ocen: uczestnicy vs odchylenia od średniej dla każdego sędziego
-        """
         if not self.controversy_analyzer:
-            print("Brak controversy_analyzer")
+            print("No controversy_analyzer")
             return
         
         heatmap_data = self.controversy_analyzer.create_controversy_heatmap_data(stage)
         
         if heatmap_data.empty:
-            print("Brak danych do heatmapy")
+            print("No data for the heatmap")
             return
         
-        # Oblicz SD dla każdego uczestnika
         participant_stds = heatmap_data.std(axis=1)
         
-        # Sortuj uczestników po SD (największe zróżnicowanie na górze)
         heatmap_sorted = heatmap_data.loc[participant_stds.sort_values(ascending=False).index]
         
         fig, ax = plt.subplots(figsize=(16, max(12, len(heatmap_sorted) * 0.3)))
         
-        # Heatmapa
+        # Heatmap
         sns.heatmap(heatmap_sorted, cmap='RdBu_r', center=0, 
                    annot=False, fmt='.1f',
-                   cbar_kws={'label': 'Deviation from contestant’s mean score'},
+                   cbar_kws={'label': "Deviation from contestant’s mean score"},
                    ax=ax, vmin=-5, vmax=5)
         
         ax.set_title(f'Variation in contestants’ scores - {stage}\n' +
@@ -68,35 +60,31 @@ class ChopinStatisticalVisualization:
         plt.close()
     
     def visualize_controversy_analysis(self, save_path: str = None):
-        """
-        Kompleksowa wizualizacja kontrowersyjności uczestników
-        """
+        """Analyzes the controversy per contestant"""
         if not self.controversy_analyzer:
-            print("Brak controversy_analyzer")
+            print("No controversy_analyzer")
             return
         
         controversy = self.controversy_analyzer.analyze_participant_controversy()
         
         if controversy.empty:
-            print("Brak danych kontrowersyjności")
+            print("No data controversy")
             return
         
         fig, axes = plt.subplots(2, 2, figsize=(16, 12))
         
-        # 1. Top uczestników z najbardziej zróżnicowanymi ocenami
         ax1 = axes[0, 0]
         top_controversial = controversy.nlargest(15, 'std')
         colors = plt.cm.Reds(np.linspace(0.3, 0.9, len(top_controversial)))
         bars = ax1.barh(range(len(top_controversial)), top_controversial['std'], color=colors)
         ax1.set_yticks(range(len(top_controversial)))
-        ax1.set_yticklabels([f"{row['imię']} {row['nazwisko']}" for _, row in top_controversial.iterrows()],
+        ax1.set_yticklabels([f"{row['firstname']} {row['lastname']}" for _, row in top_controversial.iterrows()],
                            fontsize=9)
         ax1.set_xlabel('Standard deviation of scores', fontsize=12)
         ax1.set_title('Top 15 contestants with the most varied scores\n(high SD = large differences among judges)',
                      fontsize=14, fontweight='bold')
         ax1.grid(True, alpha=0.3)
         
-        # 2. Rozpiętość vs średnia ocena
         ax2 = axes[0, 1]
         scatter = ax2.scatter(controversy['mean'], controversy['range'],
                             s=controversy['std']*50, alpha=0.6,
@@ -108,7 +96,7 @@ class ChopinStatisticalVisualization:
         ax2.grid(True, alpha=0.3)
         plt.colorbar(scatter, ax=ax2, label='SD of scores')
         
-        # 3. Rozkład kontrowersyjności
+        # Analyzes the controversy per contestant
         ax3 = axes[1, 0]
         ax3.hist(controversy['std'], bins=30, edgecolor='black', alpha=0.7, color='coral')
         ax3.axvline(controversy['std'].mean(), color='red', linestyle='--', 
@@ -144,23 +132,19 @@ class ChopinStatisticalVisualization:
         plt.close()
     
     def visualize_outliers_analysis(self, save_path: str = None):
-        """
-        Wizualizacja analizy outlierów
-        """
         if not self.controversy_analyzer:
-            print("Brak controversy_analyzer")
+            print("No controversy_analyzer")
             return
         
         outliers = self.controversy_analyzer.analyze_outliers()
         judge_outlier_stats = self.controversy_analyzer.get_outlier_statistics_by_judge()
         
         if outliers.empty:
-            print("Brak outlierów")
+            print("No outliers")
             return
         
         fig, axes = plt.subplots(2, 2, figsize=(16, 12))
         
-        # 1. Outliery per sędzia
         ax1 = axes[0, 0]
         if not judge_outlier_stats.empty:
             stats_sorted = judge_outlier_stats.sort_values('total_outliers', ascending=True)
@@ -181,7 +165,7 @@ class ChopinStatisticalVisualization:
             ax1.legend()
             ax1.grid(True, alpha=0.3)
         
-        # 2. Najekstremalniejsze oceny
+        # 2. Najekstremalniejsze score
         ax2 = axes[0, 1]
         top_outliers = outliers.nlargest(20, 'extremeness')
         
@@ -197,7 +181,6 @@ class ChopinStatisticalVisualization:
                      fontsize=14, fontweight='bold')
         ax2.grid(True, alpha=0.3)
         
-        # 3. Rozkład odchyleń outlierów
         ax3 = axes[1, 0]
         ax3.hist(outliers['deviation'], bins=40, edgecolor='black', alpha=0.7,
                 color='orange')
@@ -208,14 +191,12 @@ class ChopinStatisticalVisualization:
                      fontsize=14, fontweight='bold')
         ax3.grid(True, alpha=0.3)
         
-        # 4. Outliery przez etapy
+        # 4. Outliery przez stage
         ax4 = axes[1, 1]
         
-        # Prawidłowa kolejność etapów
         stage_order = ['stage1', 'stage2', 'stage3', 'final']
         stage_counts = outliers['stage'].value_counts()
         
-        # Posortuj według zdefiniowanej kolejności
         ordered_stages = [s for s in stage_order if s in stage_counts.index]
         ordered_counts = [stage_counts[s] for s in ordered_stages]
         
@@ -236,25 +217,20 @@ class ChopinStatisticalVisualization:
         plt.close()
     
     def visualize_ranking_stability(self, stage: str = 'final', save_path: str = None):
-        """
-        Wizualizacja stabilności rankingu (bootstrap CI + Monte Carlo)
-        """
         if not self.statistical_analyzer:
-            print("Brak statistical_analyzer")
+            print("No statistical_analyzer")
             return
         
         bootstrap_ci = self.statistical_analyzer.bootstrap_ranking_confidence(stage=stage, n_bootstrap=1000)
         mc_stability = self.statistical_analyzer.monte_carlo_ranking_stability(stage=stage, n_simulations=1000)
         
         if bootstrap_ci.empty or mc_stability.empty:
-            print("Brak danych stabilności")
+            print("No stability data")
             return
         
         fig, axes = plt.subplots(2, 2, figsize=(16, 14))
         
-        # 1. Bootstrap confidence intervals dla finalistów
         ax1 = axes[0, 0]
-        # Weź wszystkich jeśli jest 15 lub mniej, inaczej top 15
         n_to_show = min(15, len(bootstrap_ci))
         top_boot = bootstrap_ci.head(n_to_show)
         
@@ -265,7 +241,7 @@ class ChopinStatisticalVisualization:
                     fmt='o', capsize=5, capthick=2, markersize=6, color='blue', alpha=0.7)
         
         ax1.set_yticks(y_pos)
-        ax1.set_yticklabels([f"{int(row['rank'])}. {row['imię']} {row['nazwisko']}" 
+        ax1.set_yticklabels([f"{int(row['rank'])}. {row['firstname']} {row['lastname']}" 
                             for _, row in top_boot.iterrows()],
                            fontsize=9)
         ax1.set_xlabel('Score (95% CI)', fontsize=12)
@@ -274,14 +250,13 @@ class ChopinStatisticalVisualization:
         ax1.invert_yaxis()
         ax1.grid(True, alpha=0.3)
         
-        # 2. Niepewność rankingu
         ax2 = axes[0, 1]
         top_mc = mc_stability.head(n_to_show)
         
         colors2 = plt.cm.RdYlGn_r(np.linspace(0.2, 0.8, len(top_mc)))
         bars2 = ax2.barh(range(len(top_mc)), top_mc['rank_range_mc'], color=colors2)
         ax2.set_yticks(range(len(top_mc)))
-        ax2.set_yticklabels([f"{int(row['original_rank'])}. {row['imię']} {row['nazwisko']}"
+        ax2.set_yticklabels([f"{int(row['original_rank'])}. {row['firstname']} {row['lastname']}"
                             for _, row in top_mc.iterrows()],
                            fontsize=9)
         ax2.set_xlabel('Range of possible ranks (Monte Carlo)', fontsize=12)
@@ -289,13 +264,11 @@ class ChopinStatisticalVisualization:
                      fontsize=14, fontweight='bold')
         ax2.grid(True, alpha=0.3)
         
-        # Dodaj wartości na słupkach
         for i, (bar, val) in enumerate(zip(bars2, top_mc['rank_range_mc'])):
             if val > 0:
                 ax2.text(val + 0.1, bar.get_y() + bar.get_height()/2, 
                         f'{int(val)}', va='center', fontsize=8)
         
-        # 3. Szerokość CI przez rankingi
         ax3 = axes[1, 0]
         ax3.scatter(bootstrap_ci['rank'], bootstrap_ci['ci_width'],
                    s=80, alpha=0.6, c=bootstrap_ci['rank'], cmap='coolwarm')
@@ -310,12 +283,10 @@ class ChopinStatisticalVisualization:
         top5_mc = mc_stability.head(5)
         
         for i, (_, row) in enumerate(top5_mc.iterrows()):
-            # Symuluj rozkład
             mean_rank = row['mean_rank_mc']
             std_rank = row['std_rank_mc']
             
-            # Aproximacja rozkładu normalnego
-            x = np.linspace(max(1, mean_rank - 3*std_rank), 
+            x = np.linspace(max(1, mean_rank - 3*std_rank),
                           mean_rank + 3*std_rank, 100)
             from scipy.stats import norm
             y = norm.pdf(x, mean_rank, std_rank)
@@ -340,18 +311,15 @@ class ChopinStatisticalVisualization:
         plt.close()
     
     def visualize_statistical_significance(self, stage: str = 'final', save_path: str = None):
-        """
-        Wizualizacja istotności statystycznej różnic między miejscami
-        """
         if not self.statistical_analyzer:
-            print("Brak statistical_analyzer")
+            print("No statistical_analyzer")
             return
         
         significance = self.statistical_analyzer.statistical_significance_between_ranks(stage=stage)
         ties = self.statistical_analyzer.identify_statistical_ties(stage=stage, alpha=0.05)
         
         if significance.empty:
-            print("Brak danych istotności")
+            print("No significance data")
             return
         
         fig, axes = plt.subplots(2, 2, figsize=(16, 12))
@@ -390,7 +358,6 @@ class ChopinStatisticalVisualization:
         ax2.legend()
         ax2.grid(True, alpha=0.3)
         
-        # 3. Różnice wyników vs p-value
         ax3 = axes[1, 0]
         scatter3 = ax3.scatter(significance['score_diff'], significance['p_value'],
                               s=100, alpha=0.6, 
@@ -414,7 +381,7 @@ class ChopinStatisticalVisualization:
                 table_data.append([
                     f"{row['tie_group_size']}",
                     row['ranks'],
-                    row['participants'][:40] + '...' if len(row['participants']) > 40 else row['participants'],
+                    row['participants'][:40] + '…' if len(row['participants']) > 40 else row['participants'],
                     f"{row['score_range']:.2f}"
                 ])
             
@@ -439,17 +406,15 @@ class ChopinStatisticalVisualization:
         plt.close()
     
     def visualize_pairwise_agreement(self, save_path: str = None):
-        """
-        Wizualizacja pair-wise agreement (Kendall's tau)
-        """
+        """Visualisation pair-wise agreement (Kendall's tau)"""
         if not self.statistical_analyzer:
-            print("Brak statistical_analyzer")
+            print("No statistical_analyzer")
             return
         
         kendall_results = self.statistical_analyzer.pairwise_agreement_kendall()
         
         if kendall_results.empty:
-            print("Brak danych Kendall tau")
+            print("No Kendall tau data")
             return
         
         fig, axes = plt.subplots(2, 2, figsize=(16, 12))
@@ -483,7 +448,6 @@ class ChopinStatisticalVisualization:
                      fontsize=14, fontweight='bold')
         ax2.grid(True, alpha=0.3)
         
-        # 3. Rozkład Kendall's tau
         ax3 = axes[1, 0]
         ax3.hist(kendall_results['kendall_tau'], bins=30, edgecolor='black',
                 alpha=0.7, color='skyblue')
@@ -505,7 +469,7 @@ class ChopinStatisticalVisualization:
         
         # Zlicz agreement levels
         agreement_counts = kendall_results['agreement_level'].value_counts()
-        colors4 = {'strong': 'green', 'moderate': 'orange', 'weak': 'red'}
+        colors4 = {'strong': "Green", 'moderate': "Orange", 'weak': "Red"}
         
         bars4 = ax4.bar(range(len(agreement_counts)), agreement_counts.values,
                        color=[colors4.get(level, 'gray') for level in agreement_counts.index],
@@ -517,7 +481,6 @@ class ChopinStatisticalVisualization:
                      fontsize=14, fontweight='bold')
         ax4.grid(True, alpha=0.3)
         
-        # Dodaj liczby na słupkach
         for bar, val in zip(bars4, agreement_counts.values):
             ax4.text(bar.get_x() + bar.get_width()/2, val + 0.5, str(val),
                     ha='center', va='bottom', fontsize=12, fontweight='bold')
@@ -532,33 +495,24 @@ class ChopinStatisticalVisualization:
     
     def visualize_clustering_results(self, stage: str = 'final', save_path: str = None,
                                      multistage_finalists: bool = False):
-        """
-        Wizualizacja wyników clusteringu uczestników
-        
-        Args:
-            stage: etap konkursu
-            save_path: ścieżka zapisu
-            multistage_finalists: jeśli True, używa ocen finalistów ze WSZYSTKICH etapów
-        """
         if not self.clustering_analyzer:
-            print("Brak clustering_analyzer")
+            print("No clustering_analyzer")
             return
         
         try:
-            clusters_df, cluster_stats, cluster_centers, scaler = \
+            clusters_df, cluster_stats, cluster_centers, scaler =\
                 self.clustering_analyzer.kmeans_clustering_participants(
                     stage, n_clusters=5, multistage_finalists=multistage_finalists)
         except Exception as e:
-            print(f"Błąd w clusteringu: {e}")
+            print(f"Exception in clustering: {e}")
             return
         
         if clusters_df.empty:
-            print("Brak danych clusteringu")
+            print("No clustering data")
             return
         
         fig, axes = plt.subplots(2, 2, figsize=(16, 12))
         
-        # 1. Rozmiary klastrów
         ax1 = axes[0, 0]
         cluster_counts = clusters_df['cluster'].value_counts().sort_index()
         colors1 = plt.cm.Set3(np.linspace(0, 1, len(cluster_counts)))
@@ -575,7 +529,6 @@ class ChopinStatisticalVisualization:
             ax1.text(bar.get_x() + bar.get_width()/2, val + 0.5, str(val),
                     ha='center', va='bottom', fontsize=11, fontweight='bold')
         
-        # 2. Średnie wyniki per klaster
         ax2 = axes[0, 1]
         cluster_means = clusters_df.groupby('cluster')['mean_score'].mean().sort_index()
         cluster_stds = clusters_df.groupby('cluster')['mean_score'].std().sort_index()
@@ -603,11 +556,9 @@ class ChopinStatisticalVisualization:
         ax3.legend()
         ax3.grid(True, alpha=0.3)
         
-        # 4. Lista wszystkich uczestników w każdym klastrze (alfabetycznie)
         ax4 = axes[1, 1]
         ax4.axis('off')
         
-        # Przygotuj tekst z listą uczestników dla każdego klastra
         y_position = 0.95
         x_position = 0.05
         line_height = 0.05
@@ -615,10 +566,8 @@ class ChopinStatisticalVisualization:
         for cluster_id in sorted(clusters_df['cluster'].unique()):
             cluster_data = clusters_df[clusters_df['cluster'] == cluster_id]
             
-            # Pobierz nazwiska i posortuj alfabetycznie
             participants = []
             for _, row in cluster_data.iterrows():
-                # Wyciągnij samo nazwisko (część po ":")
                 full_name = row['participant']
                 if ':' in full_name:
                     name = full_name.split(':', 1)[1].strip()
@@ -626,26 +575,22 @@ class ChopinStatisticalVisualization:
                     name = full_name
                 participants.append(name)
             
-            participants.sort()  # Sortowanie alfabetyczne
+            participants.sort()
             
-            # Nagłówek klastra
             ax4.text(x_position, y_position, f"Cluster {cluster_id}:",
                     fontsize=11, fontweight='bold', 
                     transform=ax4.transAxes, va='top')
             y_position -= line_height
             
-            # Lista uczestników
             for participant in participants:
                 ax4.text(x_position + 0.02, y_position, f"• {participant}",
                         fontsize=9, transform=ax4.transAxes, va='top')
                 y_position -= line_height * 0.8
             
-            y_position -= line_height * 0.3  # Odstęp między klastrami
-        
+
         ax4.set_title('Contestants in each cluster (alphabetically)',
                      fontsize=14, fontweight='bold', pad=20)
         
-        # Zmień tytuł w zależności od trybu
         if multistage_finalists:
             title = 'Cluster analysis of contestants - finalists (all stages)'
         else:
@@ -659,21 +604,18 @@ class ChopinStatisticalVisualization:
         plt.close()
     
     def visualize_pca_judges(self, save_path: str = None):
-        """
-        Wizualizacja PCA profili sędziów
-        """
         if not self.clustering_analyzer:
-            print("Brak clustering_analyzer")
+            print("No clustering_analyzer")
             return
         
         try:
             pca, pca_df, variance_ratio = self.clustering_analyzer.pca_judge_profiles()
         except Exception as e:
-            print(f"Błąd w PCA: {e}")
+            print(f"Exception in PCA: {e}")
             return
         
         if pca_df.empty:
-            print("Brak danych PCA")
+            print("No PCA data")
             return
         
         fig, axes = plt.subplots(2, 2, figsize=(16, 12))
@@ -718,7 +660,6 @@ class ChopinStatisticalVisualization:
                      fontsize=14, fontweight='bold')
         ax2.grid(True, alpha=0.3)
         
-        # 3. PC1 vs PC3 (jeśli istnieje)
         ax3 = axes[1, 0]
         if 'PC3' in pca_df.columns:
             ax3.scatter(pca_df['PC1'], pca_df['PC3'], s=100, alpha=0.9, c='green')
@@ -744,7 +685,6 @@ class ChopinStatisticalVisualization:
                          fontsize=14, fontweight='bold')
             ax3.grid(True, alpha=0.3)
         
-        # 4. Tabela komponentów
         ax4 = axes[1, 1]
         ax4.axis('off')
         
@@ -779,46 +719,33 @@ class ChopinStatisticalVisualization:
         plt.close()
     
     def create_comprehensive_statistical_report(self, output_dir: str = 'visualizations'):
-        """
-        Tworzy kompletny raport wizualny dla analiz statystycznych
-        """
         import os
         os.makedirs(output_dir, exist_ok=True)
         
-        print("Generowanie kompleksowego raportu wizualnego analiz statystycznych...")
-        
-        # Zróżnicowanie ocen
         if self.controversy_analyzer:
-            print("  - Heatmapa zróżnicowania ocen")
+            print("  - Controversy heatmap")
             self.visualize_controversy_heatmap('final', f'{output_dir}/16_score_diversity_heatmap.png')
             
-            print("  - Analiza zróżnicowania ocen")
+            print("  - Controversy analysis")
             self.visualize_controversy_analysis(f'{output_dir}/17_score_diversity_analysis.png')
             
-            print("  - Analiza outlierów")
+            print("  - Outliers analysis")
             self.visualize_outliers_analysis(f'{output_dir}/18_outliers_analysis.png')
         
-        # Stabilność rankingu
         if self.statistical_analyzer:
-            # print("  - Stabilność rankingu")
-            # self.visualize_ranking_stability('final', f'{output_dir}/19_ranking_stability.png')
+            # Self.visualize_ranking_stability('final', f'{output_dir}/19_ranking_stability.png')
             
-            # print("  - Istotność statystyczna")
-            # self.visualize_statistical_significance('final', f'{output_dir}/20_statistical_significance.png')
+            # Self.visualize_statistical_significance('final', f'{output_dir}/20_statistical_significance.png')
             
             print("  - Pair-wise agreement")
             self.visualize_pairwise_agreement(f'{output_dir}/21_pairwise_agreement.png')
         
         # Clustering
         if self.clustering_analyzer:
-            print("  - Wyniki clusteringu")
+            print("  - Clustering results")
             self.visualize_clustering_results('final', f'{output_dir}/22_clustering_results.png')
             
-            print("  - PCA sędziów")
+            print("  - PCA for judges")
             self.visualize_pca_judges(f'{output_dir}/23_pca_judges.png')
 
-        print(f"\nWizualizacje statystyczne zapisane w: {output_dir}")
-
-
-if __name__ == "__main__":
-    print("Uruchom ten moduł po wczytaniu danych i analiz")
+        print(f"\nSaved in: {output_dir}")

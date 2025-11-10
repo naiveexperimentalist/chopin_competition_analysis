@@ -1,10 +1,9 @@
-"""
-Moduł do zaawansowanych analiz statystycznych konkursu Chopinowskiego
-- Bootstrap confidence intervals dla stabilności rankingu
-- Monte Carlo simulations
-- Statistical significance testing
-- Pair-wise agreement (Kendall's tau, Cohen's kappa)
-"""
+"""Advanced statistical analyses.
+
+Includes: bootstrap confidence intervals for stage means, Monte Carlo
+rank stability under Gaussian score noise, significance tests between
+adjacent ranks, statistical ties detection, Kendall's tau and Pearson
+agreements, and optional Cohen's kappa for top-N classification."""
 
 import pandas as pd
 import numpy as np
@@ -16,8 +15,7 @@ warnings.filterwarnings('ignore')
 
 
 class ChopinStatisticalAnalyzer:
-    """Zaawansowane analizy statystyczne"""
-    
+
     def __init__(self, processor):
         self.processor = processor
         self.judge_columns = processor.judge_columns
@@ -26,17 +24,8 @@ class ChopinStatisticalAnalyzer:
     
     def bootstrap_ranking_confidence(self, stage: str = 'final', n_bootstrap: int = 1000, 
                                     confidence_level: float = 0.95) -> pd.DataFrame:
-        """
-        Bootstrap confidence intervals dla rankingu
-        Pokazuje jak stabilne są miejsca w rankingu
-        
-        Args:
-            stage: etap do analizy ('stage1', 'stage2', 'stage3', 'final')
-            n_bootstrap: liczba iteracji bootstrap
-            confidence_level: poziom ufności (np. 0.95 dla 95% CI)
-        """
         if stage not in self.corrected_data:
-            print(f"Brak danych dla etapu: {stage}")
+            print(f"No data for the stage: {stage}")
             return pd.DataFrame()
         
         df = self.corrected_data[stage]
@@ -45,10 +34,9 @@ class ChopinStatisticalAnalyzer:
         alpha = 1 - confidence_level
         
         for idx, row in df.iterrows():
-            participant_nr = row['Nr']
-            participant_name = f"{row['imię']} {row['nazwisko']}"
+            participant_nr = row['number']
+            participant_name = f"{row['firstname']} {row['lastname']}"
             
-            # Zbierz oceny od wszystkich sędziów
             scores = []
             for judge in self.judge_columns:
                 score = pd.to_numeric(row[judge], errors='coerce')
@@ -64,7 +52,6 @@ class ChopinStatisticalAnalyzer:
             # Bootstrap
             bootstrap_means = []
             for _ in range(n_bootstrap):
-                # Losuj z powtórzeniami
                 bootstrap_sample = np.random.choice(scores_array, size=len(scores_array), replace=True)
                 bootstrap_means.append(np.mean(bootstrap_sample))
             
@@ -75,9 +62,9 @@ class ChopinStatisticalAnalyzer:
             ci_upper = np.percentile(bootstrap_means, (1 - alpha/2) * 100)
             
             results.append({
-                'Nr': participant_nr,
-                'imię': row['imię'],
-                'nazwisko': row['nazwisko'],
+                'number': participant_nr,
+                'firstname': row['firstname'],
+                'lastname': row['lastname'],
                 'participant_name': participant_name,
                 'original_score': original_mean,
                 'ci_lower': ci_lower,
@@ -90,11 +77,8 @@ class ChopinStatisticalAnalyzer:
         results_df = pd.DataFrame(results)
         
         if not results_df.empty:
-            # Oblicz ranking dla oryginalnych wyników
             results_df['rank'] = results_df['original_score'].rank(ascending=False, method='min')
             
-            # Oblicz możliwe zakresy rankingu (bootstrap rankings)
-            # Symuluj rankingi używając granic CI
             results_df['rank_ci_lower'] = results_df['ci_upper'].rank(ascending=False, method='min')
             results_df['rank_ci_upper'] = results_df['ci_lower'].rank(ascending=False, method='min')
             results_df['rank_uncertainty'] = results_df['rank_ci_upper'] - results_df['rank_ci_lower']
@@ -105,29 +89,20 @@ class ChopinStatisticalAnalyzer:
     
     def monte_carlo_ranking_stability(self, stage: str = 'final', n_simulations: int = 1000,
                                      noise_level: float = 0.1) -> pd.DataFrame:
-        """
-        Monte Carlo simulations - dodaje szum do ocen i sprawdza stabilność rankingu
-        
-        Args:
-            stage: etap do analizy
-            n_simulations: liczba symulacji
-            noise_level: poziom szumu jako proporcja SD (0.1 = 10% SD)
-        """
         if stage not in self.corrected_data:
-            print(f"Brak danych dla etapu: {stage}")
+            print(f"No data dla etapu: {stage}")
             return pd.DataFrame()
         
         df = self.corrected_data[stage]
         
-        # Przygotuj macierz ocen
         participants = []
         scores_matrix = []
         
         for idx, row in df.iterrows():
             participants.append({
-                'Nr': row['Nr'],
-                'imię': row['imię'],
-                'nazwisko': row['nazwisko']
+                'number': row['number'],
+                'firstname': row['firstname'],
+                'lastname': row['lastname']
             })
             
             scores = []
@@ -139,7 +114,6 @@ class ChopinStatisticalAnalyzer:
         
         scores_matrix = np.array(scores_matrix)
         
-        # Oryginalny ranking
         original_means = np.nanmean(scores_matrix, axis=1)
         original_ranks = rankdata(-original_means, method='min')
         
@@ -147,7 +121,7 @@ class ChopinStatisticalAnalyzer:
         rank_distributions = [[] for _ in range(len(participants))]
         
         for _ in range(n_simulations):
-            # Dodaj szum Gaussowski
+            # Add gaussian noise
             noisy_scores = scores_matrix.copy()
             for i in range(len(participants)):
                 valid_scores = scores_matrix[i][~np.isnan(scores_matrix[i])]
@@ -158,23 +132,22 @@ class ChopinStatisticalAnalyzer:
                                                scores_matrix[i] + noise, 
                                                np.nan)
             
-            # Oblicz ranking dla zaszumionych danych
+            # Calculate new ranking
             noisy_means = np.nanmean(noisy_scores, axis=1)
             noisy_ranks = rankdata(-noisy_means, method='min')
             
             for i, rank in enumerate(noisy_ranks):
                 rank_distributions[i].append(rank)
         
-        # Przygotuj wyniki
         results = []
         for i, participant in enumerate(participants):
             rank_dist = np.array(rank_distributions[i])
             
             results.append({
-                'Nr': participant['Nr'],
-                'imię': participant['imię'],
-                'nazwisko': participant['nazwisko'],
-                'participant_name': f"{participant['imię']} {participant['nazwisko']}",
+                'number': participant['number'],
+                'firstname': participant['firstname'],
+                'lastname': participant['lastname'],
+                'participant_name': f"{participant['firstname']} {participant['lastname']}",
                 'original_rank': int(original_ranks[i]),
                 'mean_rank_mc': np.mean(rank_dist),
                 'std_rank_mc': np.std(rank_dist),
@@ -191,21 +164,15 @@ class ChopinStatisticalAnalyzer:
         return results_df
     
     def statistical_significance_between_ranks(self, stage: str = 'final') -> pd.DataFrame:
-        """
-        Testuje czy różnice między sąsiednimi miejscami są statystycznie istotne
-        Używa t-testu dla niezależnych prób
-        """
         if stage not in self.corrected_data:
-            print(f"Brak danych dla etapu: {stage}")
+            print(f"No data dla etapu: {stage}")
             return pd.DataFrame()
         
         df = self.corrected_data[stage].copy()
         
-        # Dodaj ranking
         df['rank'] = df['stage_score'].rank(ascending=False, method='min')
         df = df.sort_values('rank')
         
-        # Zbierz oceny dla każdego uczestnika
         participant_scores = {}
         for idx, row in df.iterrows():
             scores = []
@@ -215,9 +182,8 @@ class ChopinStatisticalAnalyzer:
                     scores.append(score)
             
             if len(scores) >= 3:
-                participant_scores[row['Nr']] = np.array(scores)
+                participant_scores[row['number']] = np.array(scores)
         
-        # Testuj różnice między sąsiednimi miejscami (pomijając ex aequo)
         significance_results = []
         
         df_sorted = df.sort_values('rank').reset_index(drop=True)
@@ -226,12 +192,11 @@ class ChopinStatisticalAnalyzer:
             rank1 = df_sorted.iloc[i]['rank']
             rank2 = df_sorted.iloc[i+1]['rank']
             
-            # Pomiń pary z tym samym miejscem (ex aequo)
             if rank1 == rank2:
                 continue
             
-            nr1 = df_sorted.iloc[i]['Nr']
-            nr2 = df_sorted.iloc[i+1]['Nr']
+            nr1 = df_sorted.iloc[i]['number']
+            nr2 = df_sorted.iloc[i+1]['number']
             
             if nr1 in participant_scores and nr2 in participant_scores:
                 scores1 = participant_scores[nr1]
@@ -246,10 +211,10 @@ class ChopinStatisticalAnalyzer:
                 
                 significance_results.append({
                     'rank1': int(df_sorted.iloc[i]['rank']),
-                    'participant1': f"{df_sorted.iloc[i]['imię']} {df_sorted.iloc[i]['nazwisko']}",
+                    'participant1': f"{df_sorted.iloc[i]['firstname']} {df_sorted.iloc[i]['lastname']}",
                     'score1': df_sorted.iloc[i]['stage_score'],
                     'rank2': int(df_sorted.iloc[i+1]['rank']),
-                    'participant2': f"{df_sorted.iloc[i+1]['imię']} {df_sorted.iloc[i+1]['nazwisko']}",
+                    'participant2': f"{df_sorted.iloc[i+1]['firstname']} {df_sorted.iloc[i+1]['lastname']}",
                     'score2': df_sorted.iloc[i+1]['stage_score'],
                     'score_diff': df_sorted.iloc[i]['stage_score'] - df_sorted.iloc[i+1]['stage_score'],
                     't_statistic': t_stat,
@@ -257,25 +222,20 @@ class ChopinStatisticalAnalyzer:
                     'significant_05': p_value < 0.05,
                     'significant_01': p_value < 0.01,
                     'cohens_d': cohens_d,
-                    'effect_size': 'small' if abs(cohens_d) < 0.5 else ('medium' if abs(cohens_d) < 0.8 else 'large')
+                    'effect_size': "Small" if abs(cohens_d) < 0.5 else ('medium' if abs(cohens_d) < 0.8 else 'large')
                 })
         
         return pd.DataFrame(significance_results)
     
     def identify_statistical_ties(self, stage: str = 'final', alpha: float = 0.05) -> pd.DataFrame:
-        """
-        Identyfikuje grupy uczestników które są statystycznie nierozróżnialne (tie)
-        Uwzględnia również ex aequo z oryginalnego rankingu
-        """
         if stage not in self.corrected_data:
-            print(f"Brak danych dla etapu: {stage}")
+            print(f"No data for stage: {stage}")
             return pd.DataFrame()
         
         df = self.corrected_data[stage].copy()
         df['rank'] = df['stage_score'].rank(ascending=False, method='min')
         df = df.sort_values('rank')
         
-        # Zbierz oceny
         participant_data = {}
         for idx, row in df.iterrows():
             scores = []
@@ -285,14 +245,13 @@ class ChopinStatisticalAnalyzer:
                     scores.append(score)
             
             if len(scores) >= 3:
-                participant_data[row['Nr']] = {
+                participant_data[row['number']] = {
                     'scores': np.array(scores),
                     'rank': row['rank'],
-                    'name': f"{row['imię']} {row['nazwisko']}",
+                    'name': f"{row['firstname']} {row['lastname']}",
                     'score': row['stage_score']
                 }
         
-        # Znajdź ties
         ties = []
         processed = set()
         
@@ -312,32 +271,28 @@ class ChopinStatisticalAnalyzer:
                 
                 rank2 = participant_data[nr2]['rank']
                 
-                # Jeśli mają ten sam rank (ex aequo) - automatycznie tie
                 if rank1 == rank2:
                     tie_group.append(nr2)
                     processed.add(nr2)
                     continue
                 
-                # Jeśli różne ranki - testuj statystycznie
                 scores1 = participant_data[nr1]['scores']
                 scores2 = participant_data[nr2]['scores']
                 
                 # T-test
                 _, p_value = stats.ttest_ind(scores1, scores2)
                 
-                if p_value >= alpha:  # Nie ma istotnej różnicy
-                    tie_group.append(nr2)
-                    processed.add(nr2)
+                tie_group.append(nr2)
+                processed.add(nr2)
             
             if len(tie_group) > 1 or nr1 not in processed:
-                # Pobierz unikalne ranki w grupie
                 ranks_in_group = sorted(set([participant_data[nr]['rank'] for nr in tie_group]))
                 
                 tie_info = {
                     'tie_group_size': len(tie_group),
-                    'ranks': ', '.join([str(int(r)) for r in ranks_in_group]),
-                    'participants': ' / '.join([participant_data[nr]['name'] for nr in tie_group]),
-                    'scores': ', '.join([f"{participant_data[nr]['score']:.2f}" for nr in tie_group]),
+                    'ranks': ",".join([str(int(r)) for r in ranks_in_group]),
+                    'participants': "/".join([participant_data[nr]['name'] for nr in tie_group]),
+                    'scores': ",".join([f"{participant_data[nr]['score']:.2f}" for nr in tie_group]),
                     'score_range': max([participant_data[nr]['score'] for nr in tie_group]) - 
                                   min([participant_data[nr]['score'] for nr in tie_group])
                 }
@@ -347,29 +302,22 @@ class ChopinStatisticalAnalyzer:
         return pd.DataFrame(ties)
     
     def pairwise_agreement_kendall(self) -> pd.DataFrame:
-        """
-        Oblicza Kendall's tau dla każdej pary sędziów
-        Pokazuje zgodność w rankingach (nie tylko korelację liniową)
-        """
-        # Zbierz rankingi od każdego sędziego dla wszystkich uczestników
         judge_rankings = {judge: [] for judge in self.judge_columns}
         participant_keys = []
         
         for stage_name, df in self.stages_data.items():
             for idx, row in df.iterrows():
-                key = f"{row['Nr']}_{stage_name}"
+                key = f"{row['number']}_{stage_name}"
                 participant_keys.append(key)
                 
                 for judge in self.judge_columns:
                     score = pd.to_numeric(row[judge], errors='coerce')
                     judge_rankings[judge].append(score)
         
-        # Oblicz Kendall's tau dla każdej pary
         results = []
         
         for i, judge1 in enumerate(self.judge_columns):
             for judge2 in self.judge_columns[i+1:]:
-                # Usuń pary z brakami
                 scores1 = np.array(judge_rankings[judge1])
                 scores2 = np.array(judge_rankings[judge2])
                 
@@ -382,7 +330,6 @@ class ChopinStatisticalAnalyzer:
                     # Kendall's tau
                     tau, p_value = stats.kendalltau(valid_scores1, valid_scores2)
                     
-                    # Pearson dla porównania
                     pearson_r, _ = stats.pearsonr(valid_scores1, valid_scores2)
                     
                     results.append({
@@ -392,7 +339,7 @@ class ChopinStatisticalAnalyzer:
                         'tau_p_value': p_value,
                         'pearson_r': pearson_r,
                         'n_common': valid_mask.sum(),
-                        'agreement_level': 'strong' if tau > 0.7 else ('moderate' if tau > 0.5 else 'weak')
+                        'agreement_level': "Strong" if tau > 0.7 else ('moderate' if tau > 0.5 else 'weak')
                     })
         
         results_df = pd.DataFrame(results)
@@ -402,36 +349,23 @@ class ChopinStatisticalAnalyzer:
         return results_df
     
     def cohens_kappa_classification(self, threshold_top_n: int = 10) -> pd.DataFrame:
-        """
-        Oblicza Cohen's kappa dla klasyfikacji binarnej:
-        czy uczestnik jest w TOP N czy nie
-        
-        Pokazuje zgodność sędziów w identyfikacji najlepszych uczestników
-        """
-        # Dla każdego etapu
         kappa_results = []
-        
         for stage_name, df in self.stages_data.items():
-            # Dla każdej pary sędziów
             for i, judge1 in enumerate(self.judge_columns):
                 for judge2 in self.judge_columns[i+1:]:
-                    # Pobierz oceny
                     scores1 = pd.to_numeric(df[judge1], errors='coerce')
                     scores2 = pd.to_numeric(df[judge2], errors='coerce')
                     
-                    # Usuń brakujące
                     valid_mask = ~(scores1.isna() | scores2.isna())
-                    
-                    if valid_mask.sum() >= threshold_top_n * 2:  # Minimum 2x top_n uczestników
+
+                    if valid_mask.sum() >= threshold_top_n * 2:
                         valid_scores1 = scores1[valid_mask]
                         valid_scores2 = scores2[valid_mask]
                         
-                        # Klasyfikacja: top N vs reszta
                         class1 = (valid_scores1 >= valid_scores1.quantile(1 - threshold_top_n/len(valid_scores1))).astype(int)
                         class2 = (valid_scores2 >= valid_scores2.quantile(1 - threshold_top_n/len(valid_scores2))).astype(int)
                         
                         # Cohen's kappa
-                        # Macierz pomyłek
                         agree = (class1 == class2).sum()
                         total = len(class1)
                         po = agree / total  # Observed agreement
@@ -454,7 +388,7 @@ class ChopinStatisticalAnalyzer:
                             'expected_agreement': pe,
                             'n_participants': total,
                             'interpretation': ('almost perfect' if kappa > 0.8 else 
-                                             ('substantial' if kappa > 0.6 else
+                                              ('substantial' if kappa > 0.6 else
                                               ('moderate' if kappa > 0.4 else 'weak')))
                         })
         
@@ -466,14 +400,13 @@ class ChopinStatisticalAnalyzer:
 
 
 def run_statistical_analysis(processor, output_dir: str = 'statistical_results'):
-    """Uruchamia wszystkie analizy statystyczne"""
     import os
     os.makedirs(output_dir, exist_ok=True)
     
     analyzer = ChopinStatisticalAnalyzer(processor)
     
     # 1. Bootstrap confidence intervals
-    print("Obliczam bootstrap confidence intervals...")
+    print("Calculating bootstrap confidence intervals…")
     for stage in ['stage1', 'stage2', 'stage3', 'final']:
         if stage in processor.corrected_data:
             bootstrap_ci = analyzer.bootstrap_ranking_confidence(stage=stage, n_bootstrap=1000)
@@ -481,7 +414,7 @@ def run_statistical_analysis(processor, output_dir: str = 'statistical_results')
                 bootstrap_ci.to_csv(f'{output_dir}/bootstrap_ci_{stage}.csv', index=False)
     
     # 2. Monte Carlo simulations
-    print("Przeprowadzam symulacje Monte Carlo...")
+    print("Simulating Monte Carlo…")
     for stage in ['stage1', 'stage2', 'stage3', 'final']:
         if stage in processor.corrected_data:
             mc_results = analyzer.monte_carlo_ranking_stability(stage=stage, n_simulations=1000)
@@ -489,7 +422,7 @@ def run_statistical_analysis(processor, output_dir: str = 'statistical_results')
                 mc_results.to_csv(f'{output_dir}/monte_carlo_{stage}.csv', index=False)
     
     # 3. Statistical significance
-    print("Testuję istotność różnic między miejscami...")
+    print("Testing statistical significance between ranks…")
     for stage in ['stage1', 'stage2', 'stage3', 'final']:
         if stage in processor.corrected_data:
             significance = analyzer.statistical_significance_between_ranks(stage=stage)
@@ -497,7 +430,7 @@ def run_statistical_analysis(processor, output_dir: str = 'statistical_results')
                 significance.to_csv(f'{output_dir}/significance_{stage}.csv', index=False)
     
     # 4. Statistical ties
-    print("Identyfikuję grupy statystycznie nierozróżnialne...")
+    print("Identifying statistical ties…")
     for stage in ['stage1', 'stage2', 'stage3', 'final']:
         if stage in processor.corrected_data:
             ties = analyzer.identify_statistical_ties(stage=stage)
@@ -505,22 +438,18 @@ def run_statistical_analysis(processor, output_dir: str = 'statistical_results')
                 ties.to_csv(f'{output_dir}/ties_{stage}.csv', index=False)
     
     # 5. Kendall's tau
-    print("Obliczam Kendall's tau między sędziami...")
+    print("Calculating Kendall's tau between judges…")
     kendall_results = analyzer.pairwise_agreement_kendall()
     if not kendall_results.empty:
         kendall_results.to_csv(f'{output_dir}/kendall_tau_pairwise.csv', index=False)
     
     # 6. Cohen's kappa
-    print("Obliczam Cohen's kappa dla klasyfikacji...")
+    print("Calculating Cohen's kappa for the results…")
     for top_n in [5, 10, 15]:
         kappa_results = analyzer.cohens_kappa_classification(threshold_top_n=top_n)
         if not kappa_results.empty:
             kappa_results.to_csv(f'{output_dir}/cohens_kappa_top{top_n}.csv', index=False)
     
-    print(f"\nAnalizy statystyczne zapisane w: {output_dir}")
+    print(f"\nSaved in: {output_dir}")
     
     return analyzer
-
-
-if __name__ == "__main__":
-    print("Uruchom najpierw chopin_data_processor.py, a następnie ten skrypt z obiektem processor")

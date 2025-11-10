@@ -1,6 +1,9 @@
 """
-Analiza stabilności wyniku końcowego konkursu Chopinowskiego
-Bootstrap przez perturbację ocen - dodawanie losowych wartości [-1, -0.5, 0, 0.5, 1]
+Final-score stability under score perturbations (±1, ±0.5, 0).
+
+For each iteration and stage, adds small random perturbations to each
+available score, recomputes stage and cumulative results, and collects
+final-score distributions and rank stability metrics.
 """
 
 import pandas as pd
@@ -16,27 +19,12 @@ sns.set_palette("husl")
 
 
 class ChopinScoreCalculator:
-    """Kalkulator wyników z korekcjami outlierów"""
-    
     @staticmethod
     def calculate_corrected_average(scores: np.ndarray, threshold: float = 3.0) -> float:
-        """
-        Oblicza średnią z korekcją outlierów
-        
-        Args:
-            scores: tablica ocen (bez NaN i 's')
-            threshold: próg odchylenia od średniej (3 dla etapu 1, 2 dla pozostałych)
-        
-        Returns:
-            skorygowana średnia zaokrąglona do 2 miejsc
-        """
         if len(scores) == 0:
             return 0.0
         
-        # Krok 1: oblicz średnią
         avg = np.mean(scores)
-        
-        # Krok 2: skoryguj outliery
         corrected = scores.copy()
         for i, score in enumerate(scores):
             if score > avg + threshold:
@@ -44,22 +32,16 @@ class ChopinScoreCalculator:
             elif score < avg - threshold:
                 corrected[i] = avg - threshold
         
-        # Krok 3: oblicz średnią po korekcjach
         final_avg = np.mean(corrected)
         
         return round(final_avg, 2)
 
 
 class ScorePerturbationAnalyzer:
-    """Analiza stabilności przez perturbację ocen"""
+    """Stability analysis via score perturbation"""
     
     def __init__(self, stage_files: Dict[str, str], 
                  perturbation_values: List[float] = [-1.0, -0.5, 0.0, 0.5, 1.0]):
-        """
-        Args:
-            stage_files: słownik {nazwa_etapu: ścieżka_do_pliku}
-            perturbation_values: możliwe wartości perturbacji
-        """
         self.stage_files = stage_files
         self.perturbation_values = perturbation_values
         self.stages_data = {}
@@ -80,38 +62,25 @@ class ScorePerturbationAnalyzer:
         self._load_data()
     
     def _load_data(self):
-        """Wczytuje dane ze wszystkich etapów"""
-        print("Wczytuję dane z etapów...")
+        print("Loading stage data…")
         
         for stage, filepath in self.stage_files.items():
             df = pd.read_csv(filepath)
             
-            # Identyfikuj kolumny sędziów
             if not self.judge_columns:
                 self.judge_columns = [col for col in df.columns 
-                                     if col not in ['Nr', 'imię', 'nazwisko']]
+                                     if col not in ['number', 'firstname', 'lastname']]
             
-            # Konwertuj oceny (zamień 's' na NaN)
             for judge in self.judge_columns:
                 df[judge] = pd.to_numeric(df[judge], errors='coerce')
             
             self.stages_data[stage] = df
-            print(f"  {stage}: {len(df)} uczestników, {len(self.judge_columns)} sędziów")
+            print(f"  {stage}: {len(df)} contestants, {len(self.judge_columns)} judges")
     
     def perturb_scores(self, original_df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Dodaje losowe perturbacje do ocen
-        
-        Args:
-            original_df: oryginalny DataFrame z ocenami
-        
-        Returns:
-            DataFrame z perturowanymi ocenami (NaN pozostają jako NaN)
-        """
         perturbed = original_df.copy()
         
         for judge in self.judge_columns:
-            # Generuj perturbacje tylko dla niepustych ocen
             mask = perturbed[judge].notna()
             n_scores = mask.sum()
             
@@ -120,39 +89,23 @@ class ScorePerturbationAnalyzer:
                     self.perturbation_values, 
                     size=n_scores
                 )
-                
-                # Dodaj perturbacje
                 perturbed.loc[mask, judge] = perturbed.loc[mask, judge] + perturbations
-                
-                # Ogranicz do zakresu [1, 25]
                 perturbed.loc[mask, judge] = perturbed.loc[mask, judge].clip(1, 25)
         
         return perturbed
     
     def calculate_stage_score_for_participant(self, stage: str, participant_nr: int,
                                               perturbed_data: Dict[str, pd.DataFrame] = None) -> float:
-        """
-        Oblicza wynik uczestnika w danym etapie
-        
-        Args:
-            stage: nazwa etapu
-            participant_nr: numer uczestnika
-            perturbed_data: opcjonalnie perturowane dane (None = oryginalne)
-        
-        Returns:
-            skorygowana średnia ocena
-        """
         if perturbed_data:
             df = perturbed_data[stage]
         else:
             df = self.stages_data[stage]
         
-        participant = df[df['Nr'] == participant_nr]
+        participant = df[df['number'] == participant_nr]
         
         if participant.empty:
             return 0.0
         
-        # Pobierz oceny (pomijając NaN)
         scores = []
         for judge in self.judge_columns:
             score = participant[judge].iloc[0]
@@ -162,42 +115,28 @@ class ScorePerturbationAnalyzer:
         if not scores:
             return 0.0
         
-        # Oblicz skorygowaną średnią
         threshold = self.thresholds[stage]
         calculator = ChopinScoreCalculator()
         return calculator.calculate_corrected_average(np.array(scores), threshold)
     
     def calculate_final_weighted_score(self, participant_nr: int,
                                        perturbed_data: Dict[str, pd.DataFrame] = None) -> float:
-        """
-        Oblicza końcowy ważony wynik uczestnika
-        
-        Args:
-            participant_nr: numer uczestnika
-            perturbed_data: opcjonalnie perturowane dane
-        
-        Returns:
-            końcowy ważony wynik
-        """
-        # Sprawdź, czy uczestnik wystąpił we wszystkich potrzebnych etapach
         data_to_use = perturbed_data if perturbed_data else self.stages_data
         
         available_stages = []
         for stage in self.stage_files.keys():
-            if participant_nr in data_to_use[stage]['Nr'].values:
+            if participant_nr in data_to_use[stage]['number'].values:
                 available_stages.append(stage)
         
         if not available_stages:
             return 0.0
         
-        # Oblicz wynik z każdego etapu
         stage_scores = {}
         for stage in available_stages:
             stage_scores[stage] = self.calculate_stage_score_for_participant(
                 stage, participant_nr, perturbed_data
             )
         
-        # Oblicz ważoną średnią
         weighted_sum = 0.0
         total_weight = 0.0
         
@@ -212,54 +151,36 @@ class ScorePerturbationAnalyzer:
         return weighted_sum / total_weight * sum(self.weights.values())
     
     def bootstrap_with_perturbation(self, n_iterations: int = 10000) -> Dict[int, List[float]]:
-        """
-        Bootstrap z perturbacją ocen
+        print(f"\nBootstrapping with perturbation: {n_iterations} iterations…")
+        print(f"Perturbation values: {self.perturbation_values}")
         
-        Args:
-            n_iterations: liczba iteracji bootstrapu
-        
-        Returns:
-            słownik {nr_uczestnika: lista_wyników_z_iteracji}
-        """
-        print(f"\nRozpoczynanie bootstrapu z perturbacją: {n_iterations} iteracji...")
-        print(f"Wartości perturbacji: {self.perturbation_values}")
-        
-        # Znajdź wszystkich uczestników finału
-        final_participants = self.stages_data['final']['Nr'].values
+        final_participants = self.stages_data['final']['number'].values
         
         bootstrap_results = {nr: [] for nr in final_participants}
         
         for iteration in range(n_iterations):
             if (iteration + 1) % 1000 == 0:
-                print(f"  Iteracja {iteration + 1}/{n_iterations}")
+                print(f"  Iteration {iteration + 1}/{n_iterations}")
             
-            # Dla każdego etapu wygeneruj perturbowane dane
             perturbed_data = {}
             for stage in self.stage_files.keys():
                 perturbed_data[stage] = self.perturb_scores(self.stages_data[stage])
             
-            # Oblicz wynik końcowy dla każdego uczestnika
             for participant_nr in final_participants:
                 final_score = self.calculate_final_weighted_score(
                     participant_nr, perturbed_data
                 )
                 bootstrap_results[participant_nr].append(final_score)
         
-        print("Bootstrap zakończony!")
+        print("Bootstrap completed!")
         return bootstrap_results
     
     def get_actual_final_scores(self) -> pd.DataFrame:
-        """
-        Oblicza rzeczywiste wyniki końcowe (bez perturbacji)
-        
-        Returns:
-            DataFrame z kolumnami: Nr, imię, nazwisko, final_score
-        """
-        final_df = self.stages_data['final'][['Nr', 'imię', 'nazwisko']].copy()
+        final_df = self.stages_data['final'][['number', 'firstname', 'lastname']].copy()
         
         final_scores = []
         for _, row in final_df.iterrows():
-            score = self.calculate_final_weighted_score(row['Nr'])
+            score = self.calculate_final_weighted_score(row['number'])
             final_scores.append(score)
         
         final_df['final_score'] = final_scores
@@ -283,8 +204,8 @@ class PerturbationVisualizer:
         # Prepare data
         plot_data = []
         for _, row in actual_scores.iterrows():
-            nr = row['Nr']
-            name = f"{row['rank']}. {row['nazwisko']}"
+            nr = row['number']
+            name = f"{row['rank']}. {row['lastname']}"
             actual_score = row['final_score']
 
             for score in bootstrap_results[nr]:
@@ -301,7 +222,7 @@ class PerturbationVisualizer:
         fig, ax = plt.subplots(figsize=(16, max(10, len(actual_scores) * 0.4)))
 
         order = [f"{r}. {n}" for r, n in
-                 zip(actual_scores['rank'], actual_scores['nazwisko'])]
+                 zip(actual_scores['rank'], actual_scores['lastname'])]
 
         sns.violinplot(data=df, y='participant', x='score', order=order,
                        inner='quartile', ax=ax, palette='Set2')
@@ -339,7 +260,7 @@ class PerturbationVisualizer:
         alpha = (1 - confidence) / 2
 
         for _, row in actual_scores.iterrows():
-            nr = row['Nr']
+            nr = row['number']
             scores = bootstrap_results[nr]
 
             ci_low = np.percentile(scores, alpha * 100)
@@ -349,7 +270,7 @@ class PerturbationVisualizer:
 
             ci_data.append({
                 'rank': row['rank'],
-                'participant': f"{row['imię']} {row['nazwisko']}",
+                'participant': f"{row['firstname']} {row['lastname']}",
                 'actual_score': row['final_score'],
                 'ci_low': ci_low,
                 'ci_high': ci_high,
@@ -421,7 +342,7 @@ class PerturbationVisualizer:
         n_finalists = len(actual_scores)
         ranking_matrix = np.zeros((n_finalists, n_finalists))
 
-        print("Computing ranking stability matrix...")
+        print("Computing ranking stability matrix…")
 
         for iteration in range(n_iterations):
             if (iteration + 1) % 1000 == 0:
@@ -430,7 +351,7 @@ class PerturbationVisualizer:
             # Scores in this iteration
             iter_scores = []
             for _, row in actual_scores.iterrows():
-                nr = row['Nr']
+                nr = row['number']
                 iter_scores.append({
                     'nr': nr,
                     'score': bootstrap_results[nr][iteration]
@@ -443,23 +364,23 @@ class PerturbationVisualizer:
 
             # Count occurrences
             for idx, (_, row) in enumerate(actual_scores.iterrows()):
-                nr = row['Nr']
+                nr = row['number']
                 bootstrap_rank = iter_df[iter_df['nr'] == nr]['bootstrap_rank'].iloc[0]
                 ranking_matrix[idx, bootstrap_rank - 1] += 1
 
-        # Normalize to probabilities (%)
+        # Normalisation to probabilities (%)
         ranking_matrix = ranking_matrix / n_iterations * 100
 
         # Plot
         fig, ax = plt.subplots(figsize=(16, 12))
 
-        participant_labels = [f"{row['rank']}. {row['nazwisko']}"
+        participant_labels = [f"{row['rank']}. {row['lastname']}"
                               for _, row in actual_scores.iterrows()]
 
         sns.heatmap(ranking_matrix, annot=True, fmt='.1f', cmap='YlOrRd',
                     xticklabels=range(1, n_finalists + 1),
                     yticklabels=participant_labels,
-                    cbar_kws={'label': 'Probability (%)'},
+                    cbar_kws={'label': "Probability (%)"},
                     ax=ax)
 
         ax.set_xlabel('Possible rank position', fontsize=12)
@@ -485,12 +406,12 @@ class PerturbationVisualizer:
 
         scatter_data = []
         for _, row in actual_scores.iterrows():
-            nr = row['Nr']
+            nr = row['number']
             scores = bootstrap_results[nr]
             std = np.std(scores)
 
             scatter_data.append({
-                'participant': f"{row['imię']} {row['nazwisko']}",
+                'participant': f"{row['firstname']} {row['lastname']}",
                 'rank': row['rank'],
                 'actual_score': row['final_score'],
                 'std': std
@@ -539,10 +460,8 @@ class PerturbationVisualizer:
                                             perturbation_results: Dict[int, List[float]],
                                             resampling_results: Dict[int, List[float]] = None,
                                             save_path: str = None):
-        """
-        Stability comparison: perturbation vs jury resampling
-        (if both results are available)
-        """
+        """Stability comparison: perturbation vs jury resampling
+        (if both results are available)"""
         if resampling_results is None:
             print("No resampling results — skipping comparison")
             return
@@ -551,14 +470,14 @@ class PerturbationVisualizer:
 
         comparison_data = []
         for _, row in actual_scores.iterrows():
-            nr = row['Nr']
+            nr = row['number']
 
             pert_scores = perturbation_results[nr]
             resamp_scores = resampling_results[nr]
 
             comparison_data.append({
                 'rank': row['rank'],
-                'participant': f"{row['imię']} {row['nazwisko']}",
+                'participant': f"{row['firstname']} {row['lastname']}",
                 'perturbation_std': np.std(pert_scores),
                 'resampling_std': np.std(resamp_scores),
                 'perturbation_ci_width': np.percentile(pert_scores, 97.5) - np.percentile(pert_scores, 2.5),
@@ -626,106 +545,85 @@ class PerturbationVisualizer:
         plt.close()
 
     def create_full_report(self, bootstrap_results: Dict[int, List[float]],
-                          resampling_results: Dict[int, List[float]] = None,
                           output_dir: str = 'perturbation_stability'):
-        """Tworzy kompletny raport stabilności z perturbacją"""
         import os
         os.makedirs(output_dir, exist_ok=True)
         
         print(f"\n{'='*60}")
-        print("GENEROWANIE RAPORTU STABILNOŚCI - PERTURBACJA OCEN")
+        print("Generating stability report - score perturbation")
         print(f"{'='*60}\n")
         
-        print("1/5 Rozkłady wyników...")
+        print("1/4 Score distribution…")
         self.visualize_score_distributions(
             bootstrap_results,
             save_path=f'{output_dir}/38_perturbation_distributions.png'
         )
         
-        print("\n2/5 Przedziały ufności...")
+        print("\n2/4 Confidence intervals…")
         self.visualize_confidence_intervals(
             bootstrap_results, confidence=0.95,
             save_path=f'{output_dir}/39_perturbation_confidence.png'
         )
         
-        print("\n3/5 Macierz stabilności rankingu...")
+        print("\n3/4 Ranking stability matrix…")
         self.visualize_ranking_stability_matrix(
             bootstrap_results,
             save_path=f'{output_dir}/40_perturbation_ranking_matrix.png'
         )
         
-        print("\n4/5 Wynik vs wrażliwość...")
+        print("\n4/4 Score vs uncertainty…")
         self.visualize_score_vs_uncertainty(
             bootstrap_results,
             save_path=f'{output_dir}/41_perturbation_score_vs_uncertainty.png'
         )
         
-        if resampling_results:
-            print("\n5/5 Porównanie: perturbacja vs resampling...")
-            self.visualize_comparison_with_resampling(
-                bootstrap_results,
-                resampling_results,
-                save_path=f'{output_dir}/42_perturbation_vs_resampling.png'
-            )
-        else:
-            print("\n5/5 Brak danych resamplingu - pomijam porównanie")
-        
         print(f"\n{'='*60}")
-        print(f"RAPORT ZAKOŃCZONY!")
-        print(f"Wszystkie wizualizacje zapisane w: {output_dir}/")
+        print(f"ANALYSIS FINISHED!")
+        print(f"All visualizations saved in {output_dir}/")
         print(f"{'='*60}\n")
 
 
 def main():
-    """Główna funkcja - przykład użycia"""
-    
-    # Ścieżki do plików
+
     stage_files = {
-        'stage1': 'chopin_2025_stage1_by_judge.csv',
-        'stage2': 'chopin_2025_stage2_by_judge.csv',
-        'stage3': 'chopin_2025_stage3_by_judge.csv',
-        'final': 'chopin_2025_final_by_judge.csv'
+        'stage1': "Chopin_2025_stage1_by_judge.csv",
+        'stage2': "Chopin_2025_stage2_by_judge.csv",
+        'stage3': "Chopin_2025_stage3_by_judge.csv",
+        'final': "Chopin_2025_final_by_judge.csv"
     }
     
-    # Inicjalizacja analizatora
     print("="*60)
-    print("ANALIZA STABILNOŚCI - PERTURBACJA OCEN")
+    print("STABILITY ANALYSIS - SCORE PERTURBATION")
     print("="*60)
     
-    # Możesz zmienić wartości perturbacji
     perturbation_values = [-1.0, -0.5, 0.0, 0.5, 1.0]
     
     analyzer = ScorePerturbationAnalyzer(stage_files, perturbation_values)
     
-    # Bootstrap z perturbacją
     n_iterations = 10000
     bootstrap_results = analyzer.bootstrap_with_perturbation(n_iterations=n_iterations)
     
-    # Wizualizacje
+    # Visualisation
     visualizer = PerturbationVisualizer(analyzer)
     visualizer.create_full_report(
         bootstrap_results, 
         output_dir='visualizations_perturbation'
     )
     
-    # Statystyki
-    print("\nSTATYSTYKI WRAŻLIWOŚCI NA PERTURBACJE:")
-    print("-" * 60)
-    
     actual_scores = analyzer.get_actual_final_scores()
     
     for _, row in actual_scores.head(10).iterrows():
-        nr = row['Nr']
+        nr = row['number']
         scores = bootstrap_results[nr]
         mean_score = np.mean(scores)
         std_score = np.std(scores)
         ci_95 = [np.percentile(scores, 2.5), np.percentile(scores, 97.5)]
         
-        print(f"\n{row['rank']:2d}. {row['imię']} {row['nazwisko']}")
-        print(f"    Rzeczywisty wynik: {row['final_score']:.2f}")
-        print(f"    Średnia z perturbacji: {mean_score:.2f} (SD: {std_score:.2f})")
+        print(f"\n{row['rank']:2d}. {row['firstname']} {row['lastname']}")
+        print(f"    Real result: {row['final_score']:.2f}")
+        print(f"    Mean from perturbation: {mean_score:.2f} (SD: {std_score:.2f})")
         print(f"    95% CI: [{ci_95[0]:.2f}, {ci_95[1]:.2f}]")
-        print(f"    Maksymalna zmiana: ±{(ci_95[1] - ci_95[0])/2:.2f} punktów")
+        print(f"    Max. change: ±{(ci_95[1] - ci_95[0])/2:.2f} points")
 
 
 if __name__ == "__main__":

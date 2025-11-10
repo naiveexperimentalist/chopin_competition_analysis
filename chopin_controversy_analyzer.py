@@ -1,17 +1,15 @@
-"""
-Moduł do analizy zróżnicowania ocen uczestników i outlierów
-Pokazuje uczestników których oceny są najbardziej rozbieżne między sędziami
-(wysokie SD = duże zróżnicowanie opinii sędziowskich)
-"""
+"""\nChopin Competition — score variability and outlier analysis.
+
+This module computes per-contestant score variance, ranges, coefficients
+of variation, and detects extreme judge deviations (outliers) per stage.
+It exposes helper tables for visual heatmaps and summary plots.\n"""
 
 import pandas as pd
 import numpy as np
-from scipy import stats
-from typing import Dict, List, Tuple, Optional
 
 
 class ChopinControversyAnalyzer:
-    """Analiza kontrowersyjności uczestników i outlierów"""
+    """Analyzes the controversy per contestant"""
     
     def __init__(self, processor):
         self.processor = processor
@@ -20,28 +18,20 @@ class ChopinControversyAnalyzer:
         self.corrected_data = processor.corrected_data
     
     def analyze_participant_controversy(self) -> pd.DataFrame:
-        """
-        Analizuje kontrowersyjność każdego uczestnika
-        - SD ocen (wysoka = kontrowersyjny)
-        - Range ocen (rozpiętość między min a max)
-        - Coefficient of variation
-        - IQR (interquartile range)
-        """
+        """Analyzes the controversy per contestant"""
         controversy_data = []
         
         for stage_name, df in self.stages_data.items():
             for idx, row in df.iterrows():
-                participant_nr = row['Nr']
-                participant_name = f"{row['imię']} {row['nazwisko']}"
+                participant_nr = row['number']
+                participant_name = f"{row['firstname']} {row['lastname']}"
                 
-                # Zbierz oceny od wszystkich sędziów
                 scores = []
                 for judge in self.judge_columns:
                     score = pd.to_numeric(row[judge], errors='coerce')
                     if pd.notna(score):
                         scores.append(score)
                 
-                if len(scores) >= 3:  # Minimum 3 oceny żeby liczyć statystyki
                     scores_array = np.array(scores)
                     
                     mean_score = np.mean(scores_array)
@@ -54,9 +44,9 @@ class ChopinControversyAnalyzer:
                     
                     controversy_data.append({
                         'stage': stage_name,
-                        'Nr': participant_nr,
-                        'imię': row['imię'],
-                        'nazwisko': row['nazwisko'],
+                        'number': participant_nr,
+                        'firstname': row['firstname'],
+                        'lastname': row['lastname'],
                         'participant_name': participant_name,
                         'mean': mean_score,
                         'std': std_score,
@@ -72,42 +62,36 @@ class ChopinControversyAnalyzer:
         
         controversy_df = pd.DataFrame(controversy_data)
         
-        # Dodaj ranking zróżnicowania ocen
         if not controversy_df.empty:
-            # Ranking w każdym etapie
             for stage in controversy_df['stage'].unique():
                 stage_mask = controversy_df['stage'] == stage
-                controversy_df.loc[stage_mask, 'diversity_rank'] = \
+                controversy_df.loc[stage_mask, 'diversity_rank'] =\
                     controversy_df.loc[stage_mask, 'std'].rank(ascending=False)
             
-            # Ogólny ranking (dla uczestników którzy byli w wielu etapach)
-            participant_overall = controversy_df.groupby('Nr').agg({
-                'std': 'mean',
-                'range': 'mean',
-                'cv': 'mean'
+            participant_overall = controversy_df.groupby('number').agg({
+                'std': "mean",
+                'range': "mean",
+                'cv': "mean"
             }).reset_index()
             
-            participant_overall.columns = ['Nr', 'avg_std', 'avg_range', 'avg_cv']
-            participant_overall['overall_controversy_rank'] = \
+            participant_overall.columns = ['number', 'avg_std', 'avg_range', 'avg_cv']
+            participant_overall['overall_controversy_rank'] =\
                 participant_overall['avg_std'].rank(ascending=False)
             
-            controversy_df = controversy_df.merge(participant_overall, on='Nr', how='left')
+            controversy_df = controversy_df.merge(participant_overall, on='number', how='left')
         
         return controversy_df
     
     def find_most_controversial_participants(self, top_n: int = 10) -> pd.DataFrame:
-        """
-        Zwraca top N najbardziej kontrowersyjnych uczestników
-        """
+        """Analyzes the controversy per contestant"""
         controversy = self.analyze_participant_controversy()
         
         if controversy.empty:
             return pd.DataFrame()
         
-        # Weź ostatni etap każdego uczestnika
-        latest_stage = controversy.sort_values('stage', ascending=False).groupby('Nr').first()
+        latest_stage = controversy.sort_values('stage', ascending=False).groupby('number').first()
         
-        # Sortuj po kontrowersyjności
+        # Analyzes the controversy per contestant
         most_controversial = latest_stage.nlargest(top_n, 'avg_std')[
             ['participant_name', 'stage', 'mean', 'std', 'range', 'cv', 'n_judges']
         ].reset_index()
@@ -115,38 +99,30 @@ class ChopinControversyAnalyzer:
         return most_controversial
     
     def create_controversy_heatmap_data(self, stage: str = None) -> pd.DataFrame:
-        """
-        Tworzy dane do heatmapy: uczestnicy vs sędziowie
-        Pokazuje odchylenia od średniej dla każdego uczestnika
-        """
         if stage:
             stages_to_process = [stage] if stage in self.stages_data else []
         else:
-            # Weź ostatni dostępny etap
             stages_to_process = [list(self.stages_data.keys())[-1]]
         
         if not stages_to_process:
-            print(f"Brak danych dla etapu: {stage}")
+            print(f"No data for the stage: {stage}")
             return pd.DataFrame()
         
         stage_name = stages_to_process[0]
         df = self.stages_data[stage_name]
         
-        # Przygotuj macierz: uczestnicy (wiersze) vs sędziowie (kolumny)
         participants = []
         heatmap_data = []
         
         for idx, row in df.iterrows():
-            participant_label = f"{row['imię']}\n{row['nazwisko']}"
+            participant_label = f"{row['firstname']}\n{row['lastname']}"
             participants.append(participant_label)
             
-            # Zbierz oceny od wszystkich sędziów
             scores = []
             for judge in self.judge_columns:
                 score = pd.to_numeric(row[judge], errors='coerce')
                 scores.append(score)
             
-            # Oblicz średnią i odchylenia
             valid_scores = [s for s in scores if pd.notna(s)]
             if valid_scores:
                 mean_score = np.mean(valid_scores)
@@ -162,18 +138,14 @@ class ChopinControversyAnalyzer:
         return heatmap_df
     
     def analyze_outliers(self) -> pd.DataFrame:
-        """
-        Znajduje wszystkie outliery - oceny które są ekstremalne
-        Używa metody IQR (Q1 - 1.5*IQR, Q3 + 1.5*IQR)
-        """
         outliers = []
         
         for stage_name, df in self.stages_data.items():
             for idx, row in df.iterrows():
-                participant_nr = row['Nr']
-                participant_name = f"{row['imię']} {row['nazwisko']}"
+                participant_nr = row['number']
+                participant_name = f"{row['firstname']} {row['lastname']}"
                 
-                # Zbierz oceny
+                # Zbierz score
                 scores = []
                 judge_names = []
                 for judge in self.judge_columns:
@@ -182,7 +154,7 @@ class ChopinControversyAnalyzer:
                         scores.append(score)
                         judge_names.append(judge)
                 
-                if len(scores) >= 4:  # Potrzeba przynajmniej 4 ocen
+                if len(scores) >= 4:  # Potrzeba przynajmniej 4 score
                     scores_array = np.array(scores)
                     
                     q1 = np.percentile(scores_array, 25)
@@ -194,12 +166,11 @@ class ChopinControversyAnalyzer:
                     
                     mean_score = np.mean(scores_array)
                     
-                    # Sprawdź każdą ocenę
                     for judge, score in zip(judge_names, scores):
                         if score < lower_bound or score > upper_bound:
                             outliers.append({
                                 'stage': stage_name,
-                                'Nr': participant_nr,
+                                'number': participant_nr,
                                 'participant_name': participant_name,
                                 'judge': judge,
                                 'score': score,
@@ -210,12 +181,11 @@ class ChopinControversyAnalyzer:
                                 'iqr': iqr,
                                 'lower_bound': lower_bound,
                                 'upper_bound': upper_bound,
-                                'outlier_type': 'high' if score > upper_bound else 'low'
+                                'outlier_type': "High" if score > upper_bound else 'low'
                             })
         
         outliers_df = pd.DataFrame(outliers)
         
-        # Dodaj ranking ekstremów
         if not outliers_df.empty:
             outliers_df['extremeness'] = outliers_df['deviation'].abs()
             outliers_df = outliers_df.sort_values('extremeness', ascending=False)
@@ -223,10 +193,6 @@ class ChopinControversyAnalyzer:
         return outliers_df
     
     def get_outlier_statistics_by_judge(self) -> pd.DataFrame:
-        """
-        Statystyki outlierów dla każdego sędziego
-        Kto najczęściej daje ekstremalne oceny?
-        """
         outliers = self.analyze_outliers()
         
         if outliers.empty:
@@ -257,23 +223,18 @@ class ChopinControversyAnalyzer:
         return stats_df
     
     def analyze_agreement_vs_controversy(self) -> pd.DataFrame:
-        """
-        Analizuje związek między zgodnością sędziów a kontrowersyjnością uczestnika
-        Dla każdego uczestnika: średnia SD ocen vs średnia korelacja między sędziami
-        """
+        """Analyzes the controversy per contestant"""
         controversy = self.analyze_participant_controversy()
         
         if controversy.empty:
             return pd.DataFrame()
         
-        # Dla każdego uczestnika w każdym etapie
         agreement_data = []
         
         for stage_name, df in self.stages_data.items():
             for idx, row in df.iterrows():
-                participant_nr = row['Nr']
+                participant_nr = row['number']
                 
-                # Zbierz oceny
                 scores = []
                 for judge in self.judge_columns:
                     score = pd.to_numeric(row[judge], errors='coerce')
@@ -281,9 +242,8 @@ class ChopinControversyAnalyzer:
                         scores.append(score)
                 
                 if len(scores) >= 3:
-                    # Pobierz SD z controversy analysis
                     controversy_row = controversy[
-                        (controversy['Nr'] == participant_nr) & 
+                        (controversy['number'] == participant_nr) & 
                         (controversy['stage'] == stage_name)
                     ]
                     
@@ -294,7 +254,7 @@ class ChopinControversyAnalyzer:
                         
                         agreement_data.append({
                             'stage': stage_name,
-                            'Nr': participant_nr,
+                            'number': participant_nr,
                             'participant_name': controversy_row.iloc[0]['participant_name'],
                             'std': std,
                             'cv': cv,
@@ -306,52 +266,43 @@ class ChopinControversyAnalyzer:
 
 
 def run_controversy_analysis(processor, output_dir: str = 'score_diversity_results'):
-    """Uruchamia wszystkie analizy zróżnicowania ocen"""
     import os
     os.makedirs(output_dir, exist_ok=True)
     
     analyzer = ChopinControversyAnalyzer(processor)
     
-    # 1. Analiza zróżnicowania ocen uczestników
-    print("Analizuję zróżnicowanie ocen uczestników...")
+    print("analyze_participant_controversy…")
     controversy = analyzer.analyze_participant_controversy()
     controversy.to_csv(f'{output_dir}/participant_score_diversity.csv', index=False)
     
-    # 2. Top uczestników z najbardziej zróżnicowanymi ocenami
-    print("Szukam uczestników z najbardziej zróżnicowanymi ocenami...")
+    print("find_most_controversial_participants…")
     most_controversial = analyzer.find_most_controversial_participants(top_n=20)
     if not most_controversial.empty:
         most_controversial.to_csv(f'{output_dir}/most_diverse_scores.csv', index=False)
     
-    # 3. Dane do heatmapy
-    print("Przygotowuję dane do heatmapy...")
+    # 3. Dane do heatmap
+    print("create_controversy_heatmap_data…")
     for stage in processor.stages_data.keys():
         heatmap_data = analyzer.create_controversy_heatmap_data(stage=stage)
         if not heatmap_data.empty:
             heatmap_data.to_csv(f'{output_dir}/heatmap_{stage}.csv')
     
-    # 4. Analiza outlierów
-    print("Analizuję outliery...")
+    print("analyze_outliers…")
     outliers = analyzer.analyze_outliers()
     if not outliers.empty:
         outliers.to_csv(f'{output_dir}/outliers.csv', index=False)
     
-    # 5. Statystyki outlierów per sędzia
-    print("Obliczam statystyki outlierów...")
+    print("get_outlier_statistics_by_judge…")
     judge_outlier_stats = analyzer.get_outlier_statistics_by_judge()
     if not judge_outlier_stats.empty:
         judge_outlier_stats.to_csv(f'{output_dir}/judge_outlier_stats.csv', index=False)
     
-    # 6. Zgoda vs kontrowersyjność
-    print("Analizuję związek zgody i kontrowersyjności...")
+    # Analyzes the controversy per contestant
+    print("analyze_agreement_vs_controversy…")
     agreement_vs_controversy = analyzer.analyze_agreement_vs_controversy()
     if not agreement_vs_controversy.empty:
         agreement_vs_controversy.to_csv(f'{output_dir}/agreement_vs_controversy.csv', index=False)
     
-    print(f"\nAnalizy kontrowersyjności zapisane w: {output_dir}")
+    print(f"\nSaved in: {output_dir}")
     
     return analyzer
-
-
-if __name__ == "__main__":
-    print("Uruchom najpierw chopin_data_processor.py, a następnie ten skrypt z obiektem processor")

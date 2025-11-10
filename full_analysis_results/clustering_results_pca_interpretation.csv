@@ -1,4 +1,0 @@
-component,variance_explained,cumulative_variance,top_features
-PC1,0.1554380154503989,0.1554380154503989,Feature 45: 0.174 | Feature 50: 0.164 | Feature 66: 0.148 | Feature 79: 0.148 | Feature 61: 0.147
-PC2,0.1440695060252394,0.2995075214756383,Feature 27: 0.182 | Feature 78: 0.177 | Feature 26: 0.171 | Feature 138: -0.168 | Feature 33: 0.164
-PC3,0.0956883064963378,0.3951958279719761,Feature 1: 0.216 | Feature 118: -0.185 | Feature 0: 0.167 | Feature 129: 0.166 | Feature 59: 0.164

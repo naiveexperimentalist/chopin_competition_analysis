@@ -1,8 +1,8 @@
 """
-Kompleksowa analiza stabilności wyniku końcowego konkursu Chopinowskiego
-Łączy wszystkie analizy w jednym miejscu
+Comprehensive stability analysis of final Chopin Competition results
+Combines all analyses in one place
 
-Bootstrap resampling wszystkich 4 etapów + wizualizacje podstawowe i zaawansowane
+Bootstrap resampling of all 4 stages + basic and advanced visualizations
 """
 
 import pandas as pd
@@ -19,14 +19,14 @@ sns.set_palette("husl")
 
 
 class ChopinScoreCalculator:
-    """Kalkulator wyników z korekcjami outlierów"""
-    
+    """Score calculator with outlier corrections"""
+
     @staticmethod
     def calculate_corrected_average(scores: np.ndarray, threshold: float = 3.0) -> float:
-        """Oblicza średnią z korekcją outlierów"""
+        """Calculates mean with outlier correction"""
         if len(scores) == 0:
             return 0.0
-        
+
         avg = np.mean(scores)
         corrected = scores.copy()
         for i, score in enumerate(scores):
@@ -34,14 +34,14 @@ class ChopinScoreCalculator:
                 corrected[i] = avg + threshold
             elif score < avg - threshold:
                 corrected[i] = avg - threshold
-        
+
         final_avg = np.mean(corrected)
         return round(final_avg, 2)
 
 
 class StabilityAnalyzer:
-    """Główny analizator stabilności"""
-    
+    """Main stability analyzer"""
+
     def __init__(self, stage_files: Dict[str, str]):
         self.stage_files = stage_files
         self.stages_data = {}
@@ -58,233 +58,230 @@ class StabilityAnalyzer:
             'stage3': 0.35,
             'final': 0.35
         }
-        
+
         self._load_data()
-    
+
     def _load_data(self):
-        """Wczytuje dane ze wszystkich etapów"""
-        print("Wczytuję dane z etapów...")
-        
+        """Loads data from all stages"""
+        print("Loading data from stages...")
+
         for stage, filepath in self.stage_files.items():
             df = pd.read_csv(filepath)
-            
+
             if not self.judge_columns:
-                self.judge_columns = [col for col in df.columns 
-                                     if col not in ['Nr', 'imię', 'nazwisko']]
-            
+                self.judge_columns = [col for col in df.columns
+                                     if col not in ['number', 'firstname', 'lastname']]
+
             for judge in self.judge_columns:
                 df[judge] = pd.to_numeric(df[judge], errors='coerce')
-            
+
             self.stages_data[stage] = df
-            print(f"  {stage}: {len(df)} uczestników, {len(self.judge_columns)} sędziów")
-    
-    def calculate_stage_score_for_participant(self, stage: str, participant_nr: int, 
+            print(f"  {stage}: {len(df)} participants, {len(self.judge_columns)} judges")
+
+    def calculate_stage_score_for_participant(self, stage: str, participant_nr: int,
                                               judge_subset: List[str] = None) -> float:
-        """Oblicza wynik uczestnika w danym etapie"""
+        """Calculates participant score in given stage"""
         df = self.stages_data[stage]
-        participant = df[df['Nr'] == participant_nr]
-        
+        participant = df[df['number'] == participant_nr]
+
         if participant.empty:
             return 0.0
-        
+
         judges = judge_subset if judge_subset else self.judge_columns
-        
+
         scores = []
         for judge in judges:
             score = participant[judge].iloc[0]
             if pd.notna(score):
                 scores.append(score)
-        
+
         if not scores:
             return 0.0
-        
+
         threshold = self.thresholds[stage]
         calculator = ChopinScoreCalculator()
         return calculator.calculate_corrected_average(np.array(scores), threshold)
-    
-    def calculate_final_weighted_score(self, participant_nr: int, 
+
+    def calculate_final_weighted_score(self, participant_nr: int,
                                        judge_subsets: Dict[str, List[str]] = None) -> float:
-        """Oblicza końcowy ważony wynik uczestnika"""
+        """Calculates final weighted participant score"""
         if judge_subsets is None:
             judge_subsets = {stage: self.judge_columns for stage in self.stage_files.keys()}
-        
+
         available_stages = []
         for stage in self.stage_files.keys():
-            if participant_nr in self.stages_data[stage]['Nr'].values:
+            if participant_nr in self.stages_data[stage]['number'].values:
                 available_stages.append(stage)
-        
+
         if not available_stages:
             return 0.0
-        
+
         stage_scores = {}
         for stage in available_stages:
             stage_scores[stage] = self.calculate_stage_score_for_participant(
                 stage, participant_nr, judge_subsets.get(stage)
             )
-        
+
         weighted_sum = 0.0
         total_weight = 0.0
-        
+
         for stage in available_stages:
             weight = self.weights[stage]
             weighted_sum += stage_scores[stage] * weight
             total_weight += weight
-        
+
         if total_weight == 0:
             return 0.0
-        
+
         return weighted_sum / total_weight * sum(self.weights.values())
-    
+
     def bootstrap_final_scores(self, n_iterations: int = 10000) -> Dict[int, List[float]]:
-        """Bootstrap resampling - losowanie sędziów w każdym etapie"""
-        print(f"\nRozpoczynanie bootstrapu: {n_iterations} iteracji...")
-        
-        final_participants = self.stages_data['final']['Nr'].values
+        """Bootstrap resampling - random judge selection in each stage"""
+        print(f"\nRozpoczynanie bootstrapu: {n_iterations} iteration...")
+
+        final_participants = self.stages_data['final']['number'].values
         bootstrap_results = {nr: [] for nr in final_participants}
-        
+
         for iteration in range(n_iterations):
             if (iteration + 1) % 1000 == 0:
                 print(f"  Iteracja {iteration + 1}/{n_iterations}")
-            
+
             judge_subsets = {}
             for stage in self.stage_files.keys():
                 n_judges = len(self.judge_columns)
                 judge_subsets[stage] = list(np.random.choice(
                     self.judge_columns, size=n_judges, replace=True
                 ))
-            
+
             for participant_nr in final_participants:
                 final_score = self.calculate_final_weighted_score(
                     participant_nr, judge_subsets
                 )
                 bootstrap_results[participant_nr].append(final_score)
-        
-        print("Bootstrap zakończony!")
+
+        print("Bootstrap completed!")
         return bootstrap_results
-    
+
     def get_actual_final_scores(self) -> pd.DataFrame:
-        """Oblicza rzeczywiste wyniki końcowe"""
-        final_df = self.stages_data['final'][['Nr', 'imię', 'nazwisko']].copy()
-        
+        """Calculates actual final results"""
+        final_df = self.stages_data['final'][['number', 'firstname', 'lastname']].copy()
+
         final_scores = []
         for _, row in final_df.iterrows():
-            score = self.calculate_final_weighted_score(row['Nr'])
+            score = self.calculate_final_weighted_score(row['number'])
             final_scores.append(score)
-        
+
         final_df['final_score'] = final_scores
         final_df = final_df.sort_values('final_score', ascending=False).reset_index(drop=True)
         final_df['rank'] = range(1, len(final_df) + 1)
-        
+
         return final_df
-    
+
     def calculate_rank_changes_data(self, bootstrap_results: Dict[int, List[float]]) -> pd.DataFrame:
-        """Oblicza dane o potencjalnych zmianach w rankingu"""
         actual_scores = self.get_actual_final_scores()
         n_iterations = len(list(bootstrap_results.values())[0])
-        all_ranks = {nr: [] for nr in actual_scores['Nr']}
-        
-        print("Obliczam możliwe zmiany w rankingu...")
-        
+        all_ranks = {nr: [] for nr in actual_scores['number']}
+
+        print("Calculating possible ranking changes...")
+
         for iteration in range(n_iterations):
             if (iteration + 1) % 2000 == 0:
                 print(f"  {iteration + 1}/{n_iterations}")
-            
+
             iter_scores = []
             for _, row in actual_scores.iterrows():
-                nr = row['Nr']
+                nr = row['number']
                 iter_scores.append({
                     'nr': nr,
                     'score': bootstrap_results[nr][iteration]
                 })
-            
+
             iter_df = pd.DataFrame(iter_scores)
             iter_df = iter_df.sort_values('score', ascending=False).reset_index(drop=True)
             iter_df['rank'] = range(1, len(iter_df) + 1)
-            
+
             for _, row in iter_df.iterrows():
                 all_ranks[row['nr']].append(row['rank'])
-        
+
         rank_data = []
         for _, row in actual_scores.iterrows():
-            nr = row['Nr']
+            nr = row['number']
             ranks = all_ranks[nr]
-            
+
             rank_data.append({
-                'participant': f"{row['imię']} {row['nazwisko']}",
+                'participant': f"{row['firstname']} {row['lastname']}",
                 'actual_rank': row['rank'],
                 'best_rank': np.percentile(ranks, 5),
                 'worst_rank': np.percentile(ranks, 95),
                 'median_rank': np.median(ranks),
                 'rank_range': np.percentile(ranks, 95) - np.percentile(ranks, 5)
             })
-        
+
         df = pd.DataFrame(rank_data)
         df = df.sort_values('actual_rank')
-        
+
         return df
-    
+
     def calculate_stability_scores(self, bootstrap_results: Dict[int, List[float]]) -> pd.DataFrame:
-        """Oblicza stability score dla każdego uczestnika"""
         actual_scores = self.get_actual_final_scores()
         n_iterations = len(list(bootstrap_results.values())[0])
-        
+
         stability_data = []
-        
+
         print("Obliczam stability scores...")
-        
-        all_ranks = {nr: [] for nr in actual_scores['Nr']}
-        
+
+        all_ranks = {nr: [] for nr in actual_scores['number']}
+
         for iteration in range(n_iterations):
             if (iteration + 1) % 2000 == 0:
                 print(f"  {iteration + 1}/{n_iterations}")
-            
+
             iter_scores = []
             for _, row in actual_scores.iterrows():
-                nr = row['Nr']
+                nr = row['number']
                 iter_scores.append({
                     'nr': nr,
                     'score': bootstrap_results[nr][iteration]
                 })
-            
+
             iter_df = pd.DataFrame(iter_scores)
             iter_df = iter_df.sort_values('score', ascending=False).reset_index(drop=True)
             iter_df['rank'] = range(1, len(iter_df) + 1)
-            
+
             for _, row in iter_df.iterrows():
                 all_ranks[row['nr']].append(row['rank'])
-        
+
         for _, row in actual_scores.iterrows():
-            nr = row['Nr']
+            nr = row['number']
             scores = bootstrap_results[nr]
             ranks = all_ranks[nr]
-            
+
             std_score = np.std(scores)
             ci_width = np.percentile(scores, 97.5) - np.percentile(scores, 2.5)
             rank_range = np.percentile(ranks, 95) - np.percentile(ranks, 5)
-            
+
             stability_data.append({
-                'Nr': nr,
-                'participant': f"{row['imię']} {row['nazwisko']}",
+                'number': nr,
+                'participant': f"{row['firstname']} {row['lastname']}",
                 'rank': row['rank'],
                 'actual_score': row['final_score'],
                 'std_score': std_score,
                 'ci_width': ci_width,
                 'rank_range': rank_range
             })
-        
+
         df = pd.DataFrame(stability_data)
-        
-        # Normalizuj metryki
+
         df['std_normalized'] = 1 - (df['std_score'] - df['std_score'].min()) / \
                                    (df['std_score'].max() - df['std_score'].min())
         df['ci_normalized'] = 1 - (df['ci_width'] - df['ci_width'].min()) / \
                                   (df['ci_width'].max() - df['ci_width'].min())
         df['rank_normalized'] = 1 - (df['rank_range'] - df['rank_range'].min()) / \
                                     (df['rank_range'].max() - df['rank_range'].min())
-        
-        df['stability_score'] = (df['std_normalized'] + df['ci_normalized'] + 
+
+        df['stability_score'] = (df['std_normalized'] + df['ci_normalized'] +
                                  df['rank_normalized']) / 3 * 100
-        
+
         return df.sort_values('rank')
 
 
@@ -301,8 +298,8 @@ class StabilityVisualizer:
 
         plot_data = []
         for _, row in actual_scores.iterrows():
-            nr = row['Nr']
-            name = f"{row['rank']}. {row['nazwisko']}"
+            nr = row['number']
+            name = f"{row['rank']}. {row['lastname']}"
             actual_score = row['final_score']
 
             for score in bootstrap_results[nr]:
@@ -318,7 +315,7 @@ class StabilityVisualizer:
         fig, ax = plt.subplots(figsize=(16, max(10, len(actual_scores) * 0.4)))
 
         order = [f"{r}. {n}" for r, n in
-                 zip(actual_scores['rank'], actual_scores['nazwisko'])]
+                 zip(actual_scores['rank'], actual_scores['lastname'])]
 
         sns.violinplot(data=df, y='participant', x='score', order=order,
                        inner='quartile', ax=ax, palette='Set2')
@@ -350,7 +347,7 @@ class StabilityVisualizer:
         alpha = (1 - confidence) / 2
 
         for _, row in actual_scores.iterrows():
-            nr = row['Nr']
+            nr = row['number']
             scores = bootstrap_results[nr]
 
             ci_low = np.percentile(scores, alpha * 100)
@@ -360,7 +357,7 @@ class StabilityVisualizer:
 
             ci_data.append({
                 'rank': row['rank'],
-                'participant': f"{row['imię']} {row['nazwisko']}",
+                'participant': f"{row['firstname']} {row['lastname']}",
                 'actual_score': row['final_score'],
                 'ci_low': ci_low,
                 'ci_high': ci_high,
@@ -375,8 +372,6 @@ class StabilityVisualizer:
         # Confidence intervals
         ax1 = axes[0]
         y_pos = range(len(ci_df))
-        # If you re-enable errorbars, update the label below:
-        # ax1.errorbar(..., label=f'{confidence*100:.0f}% confidence interval')
 
         ax1.set_yticks(y_pos)
         ax1.set_yticklabels([f"{row['rank']}. {row['participant'][:30]}"
@@ -508,7 +503,7 @@ class StabilityVisualizer:
         ci_data = []
 
         for _, row in actual_scores.iterrows():
-            nr = row['Nr']
+            nr = row['number']
             scores = bootstrap_results[nr]
 
             ci_low = np.percentile(scores, alpha * 100)
@@ -516,7 +511,7 @@ class StabilityVisualizer:
 
             ci_data.append({
                 'rank': row['rank'],
-                'participant': f"{row['rank']}. {row['nazwisko']}",
+                'participant': f"{row['rank']}. {row['lastname']}",
                 'actual_score': row['final_score'],
                 'ci_low': ci_low,
                 'ci_high': ci_high
@@ -571,101 +566,99 @@ class StabilityVisualizer:
 
 
 def main():
-    """Główna funkcja - kompleksowa analiza stabilności"""
-    
+    """Main function - comprehensive stability analysis"""
+
     print("="*70)
-    print("KOMPLEKSOWA ANALIZA STABILNOŚCI WYNIKU KOŃCOWEGO")
-    print("Konkurs Chopinowski - Bootstrap Resampling")
+    print("COMPREHENSIVE FINAL SCORE STABILITY ANALYSIS")
+    print("Chopin Competition - Bootstrap Resampling")
     print("="*70 + "\n")
-    
-    # Ścieżki do plików
+
+    # File paths
     stage_files = {
         'stage1': 'chopin_2025_stage1_by_judge.csv',
         'stage2': 'chopin_2025_stage2_by_judge.csv',
         'stage3': 'chopin_2025_stage3_by_judge.csv',
         'final': 'chopin_2025_final_by_judge.csv'
     }
-    
-    # Inicjalizacja
+
     analyzer = StabilityAnalyzer(stage_files)
-    
-    # Bootstrap (10000 iteracji)
+
+    # Bootstrap (10000 iteration)
     bootstrap_results = analyzer.bootstrap_final_scores(n_iterations=10000)
-    
-    # Wizualizacje
+
     visualizer = StabilityVisualizer(analyzer)
-    
+
     output_dir = 'stability_analysis'
     os.makedirs(output_dir, exist_ok=True)
-    
+
     print(f"\n{'='*70}")
-    print("GENEROWANIE WIZUALIZACJI")
+    print("Generating visualizations")
     print(f"{'='*70}\n")
-    
-    print("1/4 Rozkłady wyników (violin plots)...")
+
+    print("1/4 Result distributions (violin plots)...")
     visualizer.plot_violin_distributions(
         bootstrap_results,
         save_path=f'{output_dir}/score_distributions.png'
     )
-    
-    print("\n2/4 Przedziały ufności...")
+
+    print("\n2/4 Confidence intervals...")
     visualizer.plot_confidence_intervals(
         bootstrap_results,
         confidence=0.95,
         save_path=f'{output_dir}/confidence_intervals.png'
     )
-    
-    print("\n3/4 Połączona analiza stabilności...")
+
+    print("\n3/4 Combined stability analysis...")
     rank_changes_df, stability_df = visualizer.plot_combined_stability_analysis(
         bootstrap_results,
         save_path=f'{output_dir}/combined_stability_analysis.png'
     )
-    
-    print("\n4/4 Nakładające się przedziały...")
+
+    print("\n4/4 Overlapping intervals...")
     overlaps_df = visualizer.plot_overlapping_intervals(
         bootstrap_results,
         confidence=0.95,
         save_path=f'{output_dir}/overlapping_intervals.png'
     )
-    
-    # Zapisz dane CSV
-    print("\nZapisuję dane CSV...")
+
+    # Zapisz data CSV
+    print("\nSaving CSV data...")
     actual_scores = analyzer.get_actual_final_scores()
     actual_scores.to_csv(f'{output_dir}/final_scores.csv', index=False)
     rank_changes_df.to_csv(f'{output_dir}/rank_changes.csv', index=False)
     stability_df.to_csv(f'{output_dir}/stability_scores.csv', index=False)
     overlaps_df.to_csv(f'{output_dir}/overlapping_pairs.csv', index=False)
-    
+
     print(f"\n{'='*70}")
-    print("ZAKOŃCZONO!")
-    print(f"Wszystkie wyniki w: {output_dir}/")
+    print("DONE!")
+    print(f"All results in: {output_dir}/")
     print(f"{'='*70}\n")
-    
+
     # Statystyki
-    print("STATYSTYKI STABILNOŚCI:")
+    print("STABILITY STATS:")
     print("-" * 70)
-    
-    print(f"\nNajbardziej stabilny uczestnik:")
+
+    print(f"\nMost stable participant:")
     most_stable = stability_df.nlargest(1, 'stability_score').iloc[0]
     print(f"  {most_stable['rank']}. {most_stable['participant']}")
     print(f"  Stability Score: {most_stable['stability_score']:.1f}/100")
-    
-    print(f"\nNajmniej stabilny uczestnik:")
+
+    print(f"\nLeast stable participant:")
     least_stable = stability_df.nsmallest(1, 'stability_score').iloc[0]
     print(f"  {least_stable['rank']}. {least_stable['participant']}")
     print(f"  Stability Score: {least_stable['stability_score']:.1f}/100")
-    
-    print(f"\nLiczba par z nakładającymi się przedziałami: {len(overlaps_df)}")
-    
+
+    print(f"\nNumber of pairs with overlapping intervals: {len(overlaps_df)}")
+
     if not overlaps_df.empty:
         max_diff = overlaps_df['rank_diff'].max()
-        print(f"Największa różnica w rankingu między nakładającymi się: {max_diff} pozycji")
-    
-    print("\nSzczegóły wszystkich finalistów:")
+        print(f"Largest rank difference between overlapping: {max_diff} position")
+
+    print("\nDetails of all finalists:")
     print("-" * 70)
-    print(f"{'Ranga':<6} {'Uczestnik':<30} {'Wynik':<8} {'Stability':<10} {'Rank Range':<12}")
+    print(f"{'Rank':<6} {'Participant':<30} {'Score':<8} {'Stability':<10} {'Rank Range':<12}")
     print("-" * 70)
-    
+
     for _, row in stability_df.iterrows():
         rank_info = rank_changes_df[rank_changes_df['actual_rank'] == row['rank']].iloc[0]
         print(f"{row['rank']:<6} {row['participant']:<30} "
